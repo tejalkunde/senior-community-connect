@@ -1,3 +1,4 @@
+
 import React, {
     useEffect,
     useState,
@@ -12,105 +13,76 @@ import {
     ActivityIndicator,
 } from "react-native";
 
-import {
-    useSafeAreaInsets,
-} from "react-native-safe-area-context";
-
 import { useAuth } from "../../context/authcontext";
 
 import API from "../../services/api";
 
-const OwnerDashboardScreen = ({
-    navigation,
-}) => {
+const OwnerDashboardScreen = ({ navigation }) => {
 
-    const {
-        user,
-    } = useAuth();
+    const { user } = useAuth();
 
-    const insets =
-        useSafeAreaInsets();
-
-    const [communities, setCommunities] =
-        useState([]);
-
-    const [loading, setLoading] =
-        useState(true);
+    const [communities, setCommunities] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadDashboard();
     }, []);
 
     const loadDashboard = async () => {
-
         try {
+            const response = await API.get("/communities/my");
 
-            const response =
-                await API.get(
-                    "/communities/my"
-                );
+            console.log(
+                "Owner communities response:",
+                response.data
+            );
 
             const data =
-                response.data.communities ||
+                response.data?.data ||
+                response.data?.communities ||
                 response.data ||
                 [];
 
-            setCommunities(data);
+            setCommunities(
+                Array.isArray(data) ? data : []
+            );
 
         } catch (error) {
-
             console.log(
                 "Owner dashboard error:",
                 error.response?.data ||
                 error.message
             );
 
+            setCommunities([]);
         } finally {
-
             setLoading(false);
-
         }
     };
 
-    const totalCommunities =
-        communities.length;
+    const totalCommunities = communities.length;
 
-    const totalMembers =
-        communities.reduce(
-            (total, community) =>
-                total +
-                (community.memberCount || 0),
-            0
-        );
+    const totalMembers = communities.reduce(
+        (total, community) =>
+            total + (community.memberCount || 0),
+        0
+    );
 
     return (
         <View style={styles.safeArea}>
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={[
-                    styles.container,
-                    {
-                        paddingTop:
-                            insets.top + 20,
-
-                        paddingBottom:
-                            insets.bottom + 100,
-                    },
-                ]}
+                contentContainerStyle={styles.container}
             >
 
-                {/* ========================================= */}
                 {/* HEADER */}
-                {/* ========================================= */}
 
                 <View style={styles.header}>
 
                     <View style={styles.headerContent}>
 
-                        <Text style={styles.welcome}>
-                            Welcome,
-                        </Text>
+                     
 
                         <Text style={styles.name}>
                             {user?.name || "Owner"} 👋
@@ -133,9 +105,7 @@ const OwnerDashboardScreen = ({
 
                 </View>
 
-                {/* ========================================= */}
                 {/* ROLE BADGE */}
-                {/* ========================================= */}
 
                 <View style={styles.roleBadge}>
 
@@ -149,9 +119,7 @@ const OwnerDashboardScreen = ({
 
                 </View>
 
-                {/* ========================================= */}
                 {/* STATISTICS */}
-                {/* ========================================= */}
 
                 <Text style={styles.sectionTitle}>
                     Your Overview
@@ -163,14 +131,9 @@ const OwnerDashboardScreen = ({
 
                         <ActivityIndicator
                             size="large"
-                            color="#7C3AED"
                         />
 
-                        <Text
-                            style={
-                                styles.loadingText
-                            }
-                        >
+                        <Text style={styles.loadingText}>
                             Loading statistics...
                         </Text>
 
@@ -190,24 +153,18 @@ const OwnerDashboardScreen = ({
                                     styles.communityIcon,
                                 ]}
                             >
+
                                 <Text style={styles.iconText}>
                                     👥
                                 </Text>
+
                             </View>
 
-                            <Text
-                                style={
-                                    styles.statNumber
-                                }
-                            >
+                            <Text style={styles.statNumber}>
                                 {totalCommunities}
                             </Text>
 
-                            <Text
-                                style={
-                                    styles.statLabel
-                                }
-                            >
+                            <Text style={styles.statLabel}>
                                 Communities
                             </Text>
 
@@ -223,35 +180,28 @@ const OwnerDashboardScreen = ({
                                     styles.memberIcon,
                                 ]}
                             >
+
                                 <Text style={styles.iconText}>
                                     ❤️
                                 </Text>
+
                             </View>
 
-                            <Text
-                                style={
-                                    styles.statNumber
-                                }
-                            >
+                            <Text style={styles.statNumber}>
                                 {totalMembers}
                             </Text>
 
-                            <Text
-                                style={
-                                    styles.statLabel
-                                }
-                            >
+                            <Text style={styles.statLabel}>
                                 Total Members
                             </Text>
 
                         </View>
 
                     </View>
+
                 )}
 
-                {/* ========================================= */}
                 {/* QUICK ACTIONS */}
-                {/* ========================================= */}
 
                 <Text style={styles.sectionTitle}>
                     Quick Actions
@@ -270,9 +220,11 @@ const OwnerDashboardScreen = ({
                 >
 
                     <View style={styles.actionIcon}>
+
                         <Text style={styles.actionIconText}>
                             ➕
                         </Text>
+
                     </View>
 
                     <View style={styles.actionContent}>
@@ -307,9 +259,11 @@ const OwnerDashboardScreen = ({
                 >
 
                     <View style={styles.actionIcon}>
+
                         <Text style={styles.actionIconText}>
                             👥
                         </Text>
+
                     </View>
 
                     <View style={styles.actionContent}>
@@ -344,9 +298,11 @@ const OwnerDashboardScreen = ({
                 >
 
                     <View style={styles.actionIcon}>
+
                         <Text style={styles.actionIconText}>
                             📢
                         </Text>
+
                     </View>
 
                     <View style={styles.actionContent}>
@@ -368,9 +324,7 @@ const OwnerDashboardScreen = ({
 
                 </TouchableOpacity>
 
-                {/* ========================================= */}
                 {/* INFORMATION CARD */}
-                {/* ========================================= */}
 
                 <View style={styles.infoCard}>
 
@@ -412,11 +366,9 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 100,
     },
-
-    /* ========================================= */
-    /* HEADER */
-    /* ========================================= */
 
     header: {
         flexDirection: "row",
@@ -461,10 +413,6 @@ const styles = StyleSheet.create({
         fontSize: 34,
     },
 
-    /* ========================================= */
-    /* ROLE */
-    /* ========================================= */
-
     roleBadge: {
         flexDirection: "row",
         alignItems: "center",
@@ -487,20 +435,12 @@ const styles = StyleSheet.create({
         color: "#6B5B95",
     },
 
-    /* ========================================= */
-    /* SECTION */
-    /* ========================================= */
-
     sectionTitle: {
         fontSize: 21,
         fontWeight: "700",
         color: "#433878",
         marginBottom: 13,
     },
-
-    /* ========================================= */
-    /* LOADING */
-    /* ========================================= */
 
     loadingCard: {
         backgroundColor: "#FFFFFF",
@@ -517,10 +457,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#6B5B95",
     },
-
-    /* ========================================= */
-    /* STATISTICS */
-    /* ========================================= */
 
     statsContainer: {
         flexDirection: "row",
@@ -577,10 +513,6 @@ const styles = StyleSheet.create({
         color: "#6B7280",
         marginTop: 3,
     },
-
-    /* ========================================= */
-    /* QUICK ACTIONS */
-    /* ========================================= */
 
     createCard: {
         flexDirection: "row",
@@ -652,10 +584,6 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
 
-    /* ========================================= */
-    /* INFORMATION */
-    /* ========================================= */
-
     infoCard: {
         flexDirection: "row",
         backgroundColor: "#FFFFFF",
@@ -689,3 +617,4 @@ const styles = StyleSheet.create({
     },
 
 });
+

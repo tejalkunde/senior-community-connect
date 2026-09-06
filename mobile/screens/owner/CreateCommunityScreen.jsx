@@ -86,7 +86,7 @@ const CreateCommunityScreen = ({ navigation }) => {
 
             <TextInput
                 style={styles.input}
-                placeholder="Example: Health, Yoga, Social"
+                placeholder="Example: Health, Education,Travel, Social"
                 value={category}
                 onChangeText={setCategory}
             />

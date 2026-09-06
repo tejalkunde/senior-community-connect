@@ -37,7 +37,7 @@ const SeniorBottomTabs = () => {
                 headerShown: false,
 
                 // Active tab color
-                tabBarActiveTintColor: "#208AEF",
+                tabBarActiveTintColor: "#164E63",
 
                 // Inactive tab color
                 tabBarInactiveTintColor: "#6B7280",

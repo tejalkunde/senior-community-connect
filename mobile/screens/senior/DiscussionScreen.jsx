@@ -1,7 +1,5 @@
-import React, {
-    useEffect,
-    useState,
-} from "react";
+
+import React, { useEffect, useState } from "react";
 
 import {
     View,
@@ -15,15 +13,12 @@ import {
     ActivityIndicator,
 } from "react-native";
 
-import {
-    useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import API from "../../services/api";
 
 import {
     connectSocket,
-    getSocket,
     disconnectSocket,
 } from "../../services/socket";
 
@@ -32,120 +27,212 @@ import { useAuth } from "../../context/authcontext";
 import MessageBubble from "../../components/MessageBubble";
 
 const DiscussionScreen = ({ route }) => {
-
     const {
         communityId,
         communityName,
-    } = route.params;
+    } = route.params || {};
 
     const { user } = useAuth();
-
     const insets = useSafeAreaInsets();
 
     const [messages, setMessages] = useState([]);
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [socketConnected, setSocketConnected] = useState(false);
+
+    // =====================================================
+    // LOAD MESSAGES + CONNECT SOCKET
+    // =====================================================
 
     useEffect(() => {
+        let mounted = true;
+        let socket = null;
 
-        if (!user?._id) {
-            return;
-        }
+        const setupDiscussion = async () => {
+            if (!user?._id || !communityId) {
+                setLoading(false);
+                return;
+            }
 
-        loadMessages();
+            try {
+                await loadMessages();
 
-        const socket = connectSocket(user._id);
+                socket = await connectSocket();
 
-        // Join community room
-        socket.emit(
-            "join_community",
-            communityId
-        );
+                if (!socket || !mounted) {
+                    return;
+                }
 
-        // Receive new messages
-        socket.on(
-            "receive_message",
-            handleReceiveMessage
-        );
+                const handleConnect = () => {
+                    console.log(
+                        "Discussion socket connected:",
+                        socket.id
+                    );
+
+                    if (!mounted) return;
+
+                    setSocketConnected(true);
+
+                    socket.emit(
+                        "joinCommunity",
+                        communityId
+                    );
+
+                    console.log(
+                        "Joined community:",
+                        communityId
+                    );
+                };
+
+                const handleDisconnect = () => {
+                    console.log(
+                        "Discussion socket disconnected"
+                    );
+
+                    if (!mounted) return;
+
+                    setSocketConnected(false);
+                };
+
+                const handleReceiveMessage = (newMessage) => {
+                    console.log(
+                        "New message received:",
+                        newMessage
+                    );
+
+                    if (!mounted) return;
+
+                    setMessages((previousMessages) => {
+                        if (
+                            newMessage?._id &&
+                            previousMessages.some(
+                                (item) =>
+                                    item._id ===
+                                    newMessage._id
+                            )
+                        ) {
+                            return previousMessages;
+                        }
+
+                        return [
+                            ...previousMessages,
+                            newMessage,
+                        ];
+                    });
+                };
+
+                const handleSocketError = (error) => {
+                    console.log(
+                        "Socket error:",
+                        error
+                    );
+                };
+
+                socket.on(
+                    "connect",
+                    handleConnect
+                );
+
+                socket.on(
+                    "disconnect",
+                    handleDisconnect
+                );
+
+                socket.on(
+                    "newMessage",
+                    handleReceiveMessage
+                );
+
+                socket.on(
+                    "socketError",
+                    handleSocketError
+                );
+
+                if (socket.connected) {
+                    handleConnect();
+                }
+
+            } catch (error) {
+                console.log(
+                    "Discussion setup error:",
+                    error
+                );
+            }
+        };
+
+        setupDiscussion();
 
         return () => {
+            mounted = false;
 
-            socket.off(
-                "receive_message",
-                handleReceiveMessage
-            );
+            if (socket) {
+                socket.emit(
+                    "leaveCommunity",
+                    communityId
+                );
 
-            socket.emit(
-                "leave_community",
-                communityId
-            );
+                socket.off("connect");
+                socket.off("disconnect");
+                socket.off("newMessage");
+                socket.off("socketError");
+            }
+
+            setSocketConnected(false);
 
             disconnectSocket();
         };
 
     }, [communityId, user?._id]);
 
+    // =====================================================
+    // LOAD OLD MESSAGES
+    // =====================================================
+
     const loadMessages = async () => {
-
         try {
-
             setLoading(true);
 
             const response = await API.get(
                 `/communities/${communityId}/messages`
             );
 
+            console.log(
+                "Messages API response:",
+                response.data
+            );
+
             const data =
-                response.data.messages ||
-                response.data ||
+                response.data?.data ||
+                response.data?.messages ||
                 [];
 
-            setMessages(data);
+            const messagesArray =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+            setMessages(messagesArray);
 
         } catch (error) {
-
             console.log(
                 "Messages error:",
                 error.response?.data ||
                 error.message
             );
 
-        } finally {
+            setMessages([]);
 
+        } finally {
             setLoading(false);
         }
     };
 
-    const handleReceiveMessage = (
-        newMessage
-    ) => {
+    // =====================================================
+    // SEND MESSAGE
+    // =====================================================
 
-        setMessages(
-            (previousMessages) => {
-
-                // Avoid duplicate messages
-                if (
-                    newMessage?._id &&
-                    previousMessages.some(
-                        (item) =>
-                            item._id ===
-                            newMessage._id
-                    )
-                ) {
-                    return previousMessages;
-                }
-
-                return [
-                    ...previousMessages,
-                    newMessage,
-                ];
-            }
-        );
-    };
-
-    const sendMessage = () => {
-
+    const sendMessage = async () => {
         const trimmedMessage =
             message.trim();
 
@@ -153,203 +240,181 @@ const DiscussionScreen = ({ route }) => {
             return;
         }
 
-        const socket = getSocket();
+        try {
+            const socket =
+                await connectSocket();
 
-        if (!socket) {
-
-            console.log(
-                "Socket is not connected."
-            );
-
-            return;
-        }
-
-        if (!socket.connected) {
-
-            console.log(
-                "Socket is currently disconnected."
-            );
-
-            return;
-        }
-
-        setSending(true);
-
-        socket.emit(
-            "send_message",
-            {
-                communityId,
-                senderId: user._id,
-                content: trimmedMessage,
+            if (!socket) {
+                console.log(
+                    "Socket is not available."
+                );
+                return;
             }
-        );
 
-        setMessage("");
+            if (!socket.connected) {
+                console.log(
+                    "Socket is not connected."
+                );
+                return;
+            }
 
-        setSending(false);
+            setSending(true);
+
+            socket.emit(
+                "sendMessage",
+                {
+                    communityId,
+                    content: trimmedMessage,
+                }
+            );
+
+            setMessage("");
+
+        } catch (error) {
+            console.log(
+                "Send message error:",
+                error
+            );
+        } finally {
+            setSending(false);
+        }
     };
 
-    if (loading) {
+    // =====================================================
+    // RENDER MESSAGE
+    // =====================================================
 
+    const renderMessage = ({ item }) => {
+        const senderId =
+            item?.sender?._id ||
+            item?.sender;
+
+        const currentUserId =
+            user?._id;
+
+        const isOwnMessage =
+            senderId?.toString() ===
+            currentUserId?.toString();
+
+        return (
+            <MessageBubble
+                message={item}
+                isOwnMessage={isOwnMessage}
+            />
+        );
+    };
+
+    // =====================================================
+    // LOADING SCREEN
+    // =====================================================
+
+    if (loading) {
         return (
             <View
                 style={[
-                    styles.loadingContainer,
+                    styles.centerContainer,
                     {
-                        paddingTop: insets.top,
-                        paddingBottom: insets.bottom,
+                        paddingTop:
+                            insets.top,
                     },
                 ]}
             >
-
                 <ActivityIndicator
                     size="large"
                     color="#2563EB"
                 />
 
-                <Text
-                    style={styles.loadingText}
-                >
+                <Text style={styles.loadingText}>
                     Loading discussion...
                 </Text>
-
             </View>
         );
     }
 
-    return (
+    // =====================================================
+    // MAIN UI
+    // =====================================================
 
+    return (
         <KeyboardAvoidingView
             style={styles.container}
             behavior={
                 Platform.OS === "ios"
                     ? "padding"
-                    : undefined
+                    : "height"
+            }
+            keyboardVerticalOffset={
+                Platform.OS === "ios"
+                    ? 90
+                    : 0
             }
         >
 
             {/* HEADER */}
 
-            {communityName ? (
+            <View style={styles.header}>
+                <Text style={styles.title}>
+                    {communityName ||
+                        "Community Discussion"}
+                </Text>
 
                 <View
-                    style={[
-                        styles.header,
-                        {
-                            paddingTop:
-                                insets.top + 10,
-                        },
-                    ]}
+                    style={
+                        styles.connectionRow
+                    }
                 >
+                    <View
+                        style={[
+                            styles.statusDot,
+                            {
+                                backgroundColor:
+                                    socketConnected
+                                        ? "#22C55E"
+                                        : "#EF4444",
+                            },
+                        ]}
+                    />
 
-                    <Text
-                        style={styles.headerTitle}
-                        numberOfLines={1}
-                    >
-                        {communityName}
+                    <Text style={styles.statusText}>
+                        {socketConnected
+                            ? "Connected"
+                            : "Disconnected"}
                     </Text>
-
-                    <Text
-                        style={styles.headerSubtitle}
-                    >
-                        Community Discussion
-                    </Text>
-
                 </View>
-
-            ) : null}
-
+            </View>
 
             {/* MESSAGES */}
 
             <FlatList
                 data={messages}
-
-                keyExtractor={(
-                    item,
-                    index
-                ) =>
-                    item._id ||
+                keyExtractor={(item, index) =>
+                    item?._id ||
                     index.toString()
                 }
-
-                renderItem={({ item }) => {
-
-                    const isOwnMessage =
-                        item.sender?._id ===
-                            user?._id ||
-                        item.sender ===
-                            user?._id ||
-                        item.senderId ===
-                            user?._id;
-
-                    return (
-                        <MessageBubble
-                            message={item}
-                            isOwnMessage={
-                                isOwnMessage
-                            }
-                        />
-                    );
-                }}
-
+                renderItem={renderMessage}
                 contentContainerStyle={[
-                    messages.length === 0
-                        ? styles.emptyList
-                        : styles.messageList,
-
-                    {
-                        paddingBottom:
-                            messages.length === 0
-                                ? 20
-                                : 20,
-                    },
+                    styles.messageList,
+                    messages.length === 0 &&
+                        styles.emptyList,
                 ]}
-
-                showsVerticalScrollIndicator={
-                    false
-                }
-
                 keyboardShouldPersistTaps="handled"
-
-                ListEmptyComponent={
-
-                    <View
-                        style={
-                            styles.emptyState
-                        }
-                    >
-
-                        <Text
-                            style={
-                                styles.emptyIcon
-                            }
-                        >
-                            💬
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.emptyTitle
-                            }
-                        >
-                            No Messages Yet
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.emptyText
-                            }
-                        >
-                            Start the discussion
-                            by sending the
-                            first message.
-                        </Text>
-
-                    </View>
-                }
+                showsVerticalScrollIndicator={false}
             />
 
+            {/* EMPTY STATE */}
+
+            {messages.length === 0 && (
+                <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyTitle}>
+                        No messages yet
+                    </Text>
+
+                    <Text style={styles.emptyText}>
+                        Start the discussion with
+                        your community.
+                    </Text>
+                </View>
+            )}
 
             {/* MESSAGE INPUT */}
 
@@ -365,197 +430,173 @@ const DiscussionScreen = ({ route }) => {
                     },
                 ]}
             >
-
                 <TextInput
-                    style={styles.input}
-                    placeholder="Write a message..."
-                    placeholderTextColor="#9CA3AF"
                     value={message}
                     onChangeText={setMessage}
+                    placeholder="Write a message..."
+                    placeholderTextColor="#888"
+                    style={styles.input}
                     multiline
                     maxLength={1000}
-                    textAlignVertical="top"
                 />
 
                 <TouchableOpacity
                     style={[
                         styles.sendButton,
-
-                        (!message.trim() ||
-                            sending) &&
-                            styles.disabledButton,
+                        (
+                            !message.trim() ||
+                            sending ||
+                            !socketConnected
+                        ) &&
+                            styles.sendButtonDisabled,
                     ]}
                     onPress={sendMessage}
                     disabled={
                         !message.trim() ||
-                        sending
+                        sending ||
+                        !socketConnected
                     }
                 >
-
                     {sending ? (
-
                         <ActivityIndicator
                             size="small"
                             color="#FFFFFF"
                         />
-
                     ) : (
-
-                        <Text
-                            style={
-                                styles.sendText
-                            }
-                        >
+                        <Text style={styles.sendText}>
                             Send
                         </Text>
                     )}
-
                 </TouchableOpacity>
-
             </View>
-
         </KeyboardAvoidingView>
     );
 };
 
 export default DiscussionScreen;
 
-
 const styles = StyleSheet.create({
-
     container: {
         flex: 1,
-        backgroundColor: "#F8FAFC",
+        backgroundColor: "#F5F5F5",
     },
 
-
-    /* HEADER */
-
-    header: {
-        backgroundColor: "#FFFFFF",
-        paddingHorizontal: 20,
-        paddingBottom: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: "#E5E7EB",
-    },
-
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: "700",
-        color: "#111827",
-    },
-
-    headerSubtitle: {
-        fontSize: 13,
-        color: "#6B7280",
-        marginTop: 3,
-    },
-
-
-    /* LOADING */
-
-    loadingContainer: {
+    centerContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#F8FAFC",
+        backgroundColor: "#F5F5F5",
     },
 
     loadingText: {
         marginTop: 10,
-        fontSize: 15,
-        color: "#6B7280",
+        fontSize: 16,
+        color: "#666666",
     },
 
+    header: {
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: "#FFFFFF",
+        borderBottomWidth: 1,
+        borderBottomColor: "#DDDDDD",
+    },
 
-    /* MESSAGES */
+    title: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: "#222222",
+    },
+
+    connectionRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 5,
+    },
+
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 6,
+    },
+
+    statusText: {
+        fontSize: 12,
+        color: "#666666",
+    },
 
     messageList: {
-        paddingTop: 15,
-        paddingHorizontal: 10,
+        paddingTop: 12,
+        paddingBottom: 20,
     },
 
     emptyList: {
         flexGrow: 1,
-        justifyContent: "center",
-        paddingHorizontal: 20,
     },
 
-
-    /* EMPTY STATE */
-
-    emptyState: {
+    emptyContainer: {
+        position: "absolute",
+        top: "45%",
+        left: 0,
+        right: 0,
         alignItems: "center",
         paddingHorizontal: 30,
     },
 
-    emptyIcon: {
-        fontSize: 45,
-        marginBottom: 12,
-    },
-
     emptyTitle: {
-        fontSize: 20,
-        fontWeight: "700",
-        color: "#111827",
-        marginBottom: 8,
+        fontSize: 18,
+        fontWeight: "600",
+        color: "#444444",
     },
 
     emptyText: {
+        marginTop: 6,
         fontSize: 14,
-        lineHeight: 21,
-        color: "#6B7280",
+        color: "#777777",
         textAlign: "center",
     },
-
-
-    /* INPUT */
 
     inputContainer: {
         flexDirection: "row",
         alignItems: "flex-end",
         paddingHorizontal: 10,
-        paddingTop: 10,
+        paddingTop: 8,
         backgroundColor: "#FFFFFF",
         borderTopWidth: 1,
-        borderTopColor: "#E5E7EB",
+        borderTopColor: "#DDDDDD",
     },
 
     input: {
         flex: 1,
-        minHeight: 48,
+        minHeight: 45,
         maxHeight: 110,
-        borderWidth: 1,
-        borderColor: "#D1D5DB",
-        borderRadius: 14,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        fontSize: 16,
-        color: "#111827",
-        backgroundColor: "#F9FAFB",
+        backgroundColor: "#F1F1F1",
+        borderRadius: 22,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        fontSize: 15,
+        color: "#222222",
+        marginRight: 8,
     },
 
-
-    /* SEND BUTTON */
-
     sendButton: {
-        minWidth: 70,
-        height: 48,
+        minWidth: 65,
+        height: 45,
+        borderRadius: 22,
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#2563EB",
-        paddingHorizontal: 15,
-        borderRadius: 12,
-        marginLeft: 8,
     },
 
-    disabledButton: {
+    sendButtonDisabled: {
         opacity: 0.5,
     },
 
     sendText: {
         color: "#FFFFFF",
-        fontWeight: "700",
-        fontSize: 16,
+        fontWeight: "600",
+        fontSize: 14,
     },
 });
+

@@ -61,7 +61,8 @@ const AnnouncementsScreen = () => {
             );
 
             const data =
-                response.data.communities ||
+                response.data?.data ||
+                response.data?.communities ||
                 response.data;
 
             const communityList =
@@ -135,8 +136,10 @@ const AnnouncementsScreen = () => {
                     `/communities/${communityId}/announcements`
                 );
 
-                const data =
-                    response.data.announcements ||
+                
+                   const data =
+                    response.data?.data ||
+                    response.data?.announcements ||
                     response.data;
 
                 const announcementList =
@@ -221,10 +224,10 @@ const AnnouncementsScreen = () => {
             const response = await API.get(
                 "/communities/my"
             );
-
             const data =
-                response.data.communities ||
-                response.data;
+               response.data?.data ||
+               response.data?.communities ||
+               response.data;
 
             const communityList =
                 Array.isArray(data)

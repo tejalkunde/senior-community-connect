@@ -1,7 +1,5 @@
-import React, {
-    useEffect,
-    useState,
-} from "react";
+
+import React, { useCallback, useState } from "react";
 
 import {
     View,
@@ -12,11 +10,15 @@ import {
     TouchableOpacity,
 } from "react-native";
 
-import {
-    useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import API from "../../services/api";
+import CommunityCard from "../../components/CommunityCard";
+
+import {
+    getMyCommunities,
+} from "../../services/communityService";
+
 
 const MyCommunitiesScreen = ({ navigation }) => {
 
@@ -25,52 +27,220 @@ const MyCommunitiesScreen = ({ navigation }) => {
     const [communities, setCommunities] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadMyCommunities();
-    }, []);
+
+    // =====================================================
+    // LOAD MY COMMUNITIES
+    // =====================================================
 
     const loadMyCommunities = async () => {
+
         try {
-            const response = await API.get("/communities/my");
+
+            setLoading(true);
+
+            const data = await getMyCommunities();
+
+            console.log(
+                "My Communities API Data:",
+                data
+            );
+
+
+            /*
+             * Backend now returns:
+             *
+             * [
+             *   {
+             *      _id: "...",
+             *      name: "Morning Walkers",
+             *      description: "...",
+             *      category: "FITNESS",
+             *      memberCount: 1,
+             *      isMember: true,
+             *      joinedAt: "..."
+             *   }
+             * ]
+             *
+             *
+             * But this also supports the OLD format:
+             *
+             * [
+             *   {
+             *      _id: "...",
+             *      community: {
+             *          _id: "...",
+             *          name: "Morning Walkers",
+             *          ...
+             *      },
+             *      joinedAt: "..."
+             *   }
+             * ]
+             */
+
+
+            const communityList = Array.isArray(data)
+                ? data
+                    .map((item) => {
+
+                        /*
+                         * NEW FORMAT
+                         * item itself is the community
+                         */
+
+                        if (
+                            item?.name &&
+                            item?._id
+                        ) {
+
+                            return {
+                                ...item,
+
+                                isMember: true,
+
+                                joinedAt:
+                                    item.joinedAt ||
+                                    item.createdAt,
+                            };
+                        }
+
+
+                        /*
+                         * OLD FORMAT
+                         * community is inside membership
+                         */
+
+                        if (
+                            item?.community
+                        ) {
+
+                            return {
+                                ...item.community,
+
+                                isMember: true,
+
+                                joinedAt:
+                                    item.joinedAt ||
+                                    item.createdAt,
+
+                                /*
+                                 * If memberCount already exists,
+                                 * preserve it.
+                                 */
+                                memberCount:
+                                    item.community.memberCount ??
+                                    item.memberCount ??
+                                    0,
+                            };
+                        }
+
+
+                        return null;
+
+                    })
+                    .filter(Boolean)
+                : [];
+
+
+            console.log(
+                "Formatted My Communities:",
+                communityList
+            );
+
 
             setCommunities(
-                response.data.communities || response.data
+                communityList
             );
 
         } catch (error) {
+
             console.log(
-                "My communities error:",
-                error.response?.data || error.message
+                "My Communities error:",
+                error.response?.data ||
+                error.message
             );
+
+            setCommunities([]);
+
         } finally {
+
             setLoading(false);
         }
     };
 
+
+    // =====================================================
+    // RELOAD WHEN SCREEN GETS FOCUS
+    // =====================================================
+
+    useFocusEffect(
+        useCallback(() => {
+
+            loadMyCommunities();
+
+        }, [])
+    );
+
+
+    // =====================================================
+    // OPEN COMMUNITY
+    // =====================================================
+
+    const openCommunity = (community) => {
+
+        navigation.navigate(
+            "CommunityDetails",
+            {
+                communityId:
+                    community._id,
+
+                isMember: true,
+
+                communityName:
+                    community.name,
+            }
+        );
+    };
+
+
+    // =====================================================
+    // LOADING
+    // =====================================================
+
     if (loading) {
+
         return (
             <View
                 style={[
                     styles.loader,
                     {
-                        paddingTop: insets.top,
+                        paddingTop:
+                            insets.top,
                     },
                 ]}
             >
+
                 <ActivityIndicator
                     size="large"
-                    color="#3F7D4A"
+                    color="#0F766E"
                 />
+
             </View>
         );
     }
 
+
+    // =====================================================
+    // MAIN UI
+    // =====================================================
+
     return (
+
         <View
             style={[
                 styles.container,
                 {
-                    paddingTop: insets.top + 20,
+                    paddingTop:
+                        insets.top + 15,
                 },
             ]}
         >
@@ -83,69 +253,93 @@ const MyCommunitiesScreen = ({ navigation }) => {
                 Communities you have joined
             </Text>
 
+
+            {/* =================================================
+                EMPTY STATE
+            ================================================= */}
+
             {communities.length === 0 ? (
 
-                <View style={styles.emptyContainer}>
+                <View
+                    style={
+                        styles.emptyContainer
+                    }
+                >
 
-                    <Text style={styles.emptyIcon}>
-                        👥
+                    <Text
+                        style={
+                            styles.emptyTitle
+                        }
+                    >
+                        No Communities Yet
                     </Text>
 
-                    <Text style={styles.emptyTitle}>
-                        No communities yet
+                    <Text
+                        style={
+                            styles.emptyText
+                        }
+                    >
+                        You haven't joined any
+                        communities yet.
                     </Text>
 
-                    <Text style={styles.emptyText}>
-                        Join a community to see it here.
-                    </Text>
+                    <TouchableOpacity
+                        style={
+                            styles.discoverButton
+                        }
+                        onPress={() =>
+                            navigation.navigate(
+                                "Communities"
+                            )
+                        }
+                    >
+
+                        <Text
+                            style={
+                                styles.discoverButtonText
+                            }
+                        >
+                            Discover Communities
+                        </Text>
+
+                    </TouchableOpacity>
 
                 </View>
 
             ) : (
 
+                /* =================================================
+                   COMMUNITY LIST
+                ================================================= */
+
                 <FlatList
                     data={communities}
 
-                    keyExtractor={(item) => item._id}
+                    keyExtractor={(item, index) =>
+                        item?._id ||
+                        index.toString()
+                    }
 
                     renderItem={({ item }) => (
 
-                        <TouchableOpacity
-                            style={styles.card}
-                            activeOpacity={0.8}
+                        <CommunityCard
+                            community={item}
                             onPress={() =>
-                                navigation.navigate(
-                                    "CommunityDetails",
-                                    {
-                                        communityId: item._id,
-                                    }
+                                openCommunity(
+                                    item
                                 )
                             }
-                        >
-
-                            <Text style={styles.communityName}>
-                                {item.name}
-                            </Text>
-
-                            <Text style={styles.category}>
-                                {item.category}
-                            </Text>
-
-                            <Text style={styles.description}>
-                                {item.description}
-                            </Text>
-
-                            <Text style={styles.members}>
-                                {item.memberCount || 0} members
-                            </Text>
-
-                        </TouchableOpacity>
+                        />
 
                     )}
 
-                    contentContainerStyle={styles.list}
+                    contentContainerStyle={
+                        styles.list
+                    }
 
-                    showsVerticalScrollIndicator={false}
+                    showsVerticalScrollIndicator={
+                        false
+                    }
                 />
 
             )}
@@ -154,33 +348,32 @@ const MyCommunitiesScreen = ({ navigation }) => {
     );
 };
 
+
 export default MyCommunitiesScreen;
+
+
+// =========================================================
+// STYLES
+// =========================================================
 
 const styles = StyleSheet.create({
 
     container: {
         flex: 1,
-        paddingHorizontal: 20,
-        backgroundColor: "#EDF7ED",
-    },
-
-    loader: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#EDF7ED",
+        paddingHorizontal: 18,
+        backgroundColor: "#E6F7F5",
     },
 
     title: {
         fontSize: 28,
         fontWeight: "700",
+        color: "#155E75",
         marginBottom: 5,
-        color: "#245C3A",
     },
 
     subtitle: {
         fontSize: 16,
-        color: "#557A62",
+        color: "#4B5563",
         marginBottom: 20,
     },
 
@@ -188,74 +381,48 @@ const styles = StyleSheet.create({
         paddingBottom: 100,
     },
 
-    card: {
-        backgroundColor: "#FFFFFF",
-        padding: 20,
-        borderRadius: 16,
-        marginBottom: 15,
-
-        borderWidth: 1,
-        borderColor: "#CDE8D2",
-
-        elevation: 3,
-
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.08,
-        shadowRadius: 5,
-    },
-
-    communityName: {
-        fontSize: 21,
-        fontWeight: "700",
-        color: "#245C3A",
-    },
-
-    category: {
-        fontSize: 16,
-        marginTop: 5,
-        color: "#557A62",
-    },
-
-    description: {
-        fontSize: 16,
-        marginTop: 10,
-        lineHeight: 22,
-        color: "#374151",
-    },
-
-    members: {
-        fontSize: 15,
-        marginTop: 10,
-        color: "#557A62",
-        fontWeight: "600",
+    loader: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#E6F7F5",
     },
 
     emptyContainer: {
+        flex: 1,
+        justifyContent: "center",
         alignItems: "center",
-        marginTop: 70,
-        paddingHorizontal: 20,
-    },
-
-    emptyIcon: {
-        fontSize: 48,
-        marginBottom: 15,
+        paddingHorizontal: 25,
+        paddingBottom: 100,
     },
 
     emptyTitle: {
-        fontSize: 21,
+        fontSize: 24,
         fontWeight: "700",
-        color: "#245C3A",
+        color: "#155E75",
+        marginBottom: 10,
     },
 
     emptyText: {
-        fontSize: 16,
-        marginTop: 10,
+        fontSize: 17,
+        color: "#4B5563",
         textAlign: "center",
-        color: "#557A62",
-        lineHeight: 23,
+        lineHeight: 24,
+        marginBottom: 25,
     },
+
+    discoverButton: {
+        backgroundColor: "#0F766E",
+        paddingHorizontal: 22,
+        paddingVertical: 14,
+        borderRadius: 12,
+    },
+
+    discoverButtonText: {
+        color: "#FFFFFF",
+        fontSize: 16,
+        fontWeight: "700",
+    },
+
 });
+

@@ -1,3 +1,4 @@
+
 import React from "react";
 
 import {
@@ -33,8 +34,6 @@ const HomeScreen = () => {
                 showsVerticalScrollIndicator={false}
             >
 
-                {/* WELCOME */}
-
                 <Text style={styles.welcome}>
                     Welcome, {user?.name || "Senior"} 👋
                 </Text>
@@ -42,9 +41,6 @@ const HomeScreen = () => {
                 <Text style={styles.subtitle}>
                     We're happy to have you with us.
                 </Text>
-
-
-                {/* HERO CARD */}
 
                 <View style={styles.heroCard}>
 
@@ -72,9 +68,6 @@ const HomeScreen = () => {
 
                 </View>
 
-
-                {/* ABOUT CARD */}
-
                 <View style={styles.aboutCard}>
 
                     <Text style={styles.sectionTitle}>
@@ -92,24 +85,14 @@ const HomeScreen = () => {
 
                 </View>
 
-
-                {/* WHAT YOU CAN DO */}
-
                 <Text style={styles.mainSectionTitle}>
                     What You Can Do
                 </Text>
 
-
-                {/* DISCOVER COMMUNITIES */}
-
                 <View style={styles.discoverCard}>
 
                     <View style={styles.discoverIcon}>
-
-                        <Text style={styles.icon}>
-                            👥
-                        </Text>
-
+                        <Text style={styles.icon}>👥</Text>
                     </View>
 
                     <View style={styles.featureContent}>
@@ -127,17 +110,10 @@ const HomeScreen = () => {
 
                 </View>
 
-
-                {/* JOIN COMMUNITIES */}
-
                 <View style={styles.joinCard}>
 
                     <View style={styles.joinIcon}>
-
-                        <Text style={styles.icon}>
-                            ❤️
-                        </Text>
-
+                        <Text style={styles.icon}>❤️</Text>
                     </View>
 
                     <View style={styles.featureContent}>
@@ -155,17 +131,10 @@ const HomeScreen = () => {
 
                 </View>
 
-
-                {/* DISCUSSIONS */}
-
                 <View style={styles.discussionCard}>
 
                     <View style={styles.discussionIcon}>
-
-                        <Text style={styles.icon}>
-                            💬
-                        </Text>
-
+                        <Text style={styles.icon}>💬</Text>
                     </View>
 
                     <View style={styles.featureContent}>
@@ -183,17 +152,10 @@ const HomeScreen = () => {
 
                 </View>
 
-
-                {/* UPDATES */}
-
                 <View style={styles.updateCard}>
 
                     <View style={styles.updateIcon}>
-
-                        <Text style={styles.icon}>
-                            📢
-                        </Text>
-
+                        <Text style={styles.icon}>📢</Text>
                     </View>
 
                     <View style={styles.featureContent}>
@@ -210,9 +172,6 @@ const HomeScreen = () => {
                     </View>
 
                 </View>
-
-
-                {/* FOOTER CARD */}
 
                 <View style={styles.footerCard}>
 
@@ -240,14 +199,11 @@ const HomeScreen = () => {
 
 export default HomeScreen;
 
-
 const styles = StyleSheet.create({
-
-    /* MAIN SCREEN */
 
     safeArea: {
         flex: 1,
-        backgroundColor: "#E8F1FF",
+        backgroundColor: "#E6F7F5",
     },
 
     container: {
@@ -255,13 +211,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
 
-
-    /* WELCOME */
-
     welcome: {
         fontSize: 28,
         fontWeight: "700",
-        color: "#1E3A8A",
+        color: "#155E75",
     },
 
     subtitle: {
@@ -272,23 +225,14 @@ const styles = StyleSheet.create({
         lineHeight: 24,
     },
 
-
-    /* HERO - SOFT BLUE */
-
     heroCard: {
-        backgroundColor: "#DBEAFE",
-
+        backgroundColor: "#FFFFFF",
         borderRadius: 20,
-
         padding: 25,
-
         marginBottom: 20,
-
         borderWidth: 1,
-        borderColor: "#BFDBFE",
-
+        borderColor: "#B7E4DF",
         elevation: 3,
-
         shadowColor: "#000",
         shadowOffset: {
             width: 0,
@@ -306,34 +250,25 @@ const styles = StyleSheet.create({
     heroTitle: {
         fontSize: 25,
         fontWeight: "800",
-        color: "#1E3A8A",
+        color: "#155E75",
         marginBottom: 2,
     },
 
     heroText: {
         fontSize: 16,
         lineHeight: 24,
-        color: "#1E40AF",
+        color: "#0F766E",
         marginTop: 15,
     },
 
-
-    /* ABOUT - SOFT PURPLE */
-
     aboutCard: {
-        backgroundColor: "#F3E8FF",
-
+        backgroundColor: "#FFFFFF",
         borderRadius: 18,
-
         padding: 20,
-
         marginBottom: 25,
-
         borderWidth: 1,
-        borderColor: "#E9D5FF",
-
+        borderColor: "#B7E4DF",
         elevation: 2,
-
         shadowColor: "#000",
         shadowOffset: {
             width: 0,
@@ -346,200 +281,110 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 21,
         fontWeight: "700",
-        color: "#581C87",
+        color: "#155E75",
         marginBottom: 10,
     },
 
     sectionText: {
         fontSize: 16,
         lineHeight: 25,
-        color: "#6B21A8",
+        color: "#374151",
     },
-
-
-    /* SECTION TITLE */
 
     mainSectionTitle: {
         fontSize: 23,
         fontWeight: "700",
-        color: "#1F2937",
+        color: "#155E75",
         marginBottom: 15,
     },
-
-
-    /* DISCOVER - SOFT GREEN */
 
     discoverCard: {
         flexDirection: "row",
         alignItems: "center",
-
-        backgroundColor: "#DCFCE7",
-
+        backgroundColor: "#FFFFFF",
         borderRadius: 16,
-
         padding: 17,
-
         marginBottom: 12,
-
         borderWidth: 1,
-        borderColor: "#BBF7D0",
-
+        borderColor: "#B7E4DF",
         elevation: 2,
-
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.06,
-        shadowRadius: 5,
     },
 
     discoverIcon: {
         width: 55,
         height: 55,
-
         borderRadius: 15,
-
         justifyContent: "center",
         alignItems: "center",
-
-        backgroundColor: "#BBF7D0",
-
+        backgroundColor: "#D1FAE5",
         marginRight: 15,
     },
-
-
-    /* JOIN - SOFT PINK */
 
     joinCard: {
         flexDirection: "row",
         alignItems: "center",
-
-        backgroundColor: "#FCE7F3",
-
+        backgroundColor: "#FFFFFF",
         borderRadius: 16,
-
         padding: 17,
-
         marginBottom: 12,
-
         borderWidth: 1,
-        borderColor: "#FBCFE8",
-
+        borderColor: "#B7E4DF",
         elevation: 2,
-
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.06,
-        shadowRadius: 5,
     },
 
     joinIcon: {
         width: 55,
         height: 55,
-
         borderRadius: 15,
-
         justifyContent: "center",
         alignItems: "center",
-
-        backgroundColor: "#FBCFE8",
-
+        backgroundColor: "#FCE7F3",
         marginRight: 15,
     },
-
-
-    /* DISCUSSION - SOFT ORANGE */
 
     discussionCard: {
         flexDirection: "row",
         alignItems: "center",
-
-        backgroundColor: "#FFEDD5",
-
+        backgroundColor: "#FFFFFF",
         borderRadius: 16,
-
         padding: 17,
-
         marginBottom: 12,
-
         borderWidth: 1,
-        borderColor: "#FED7AA",
-
+        borderColor: "#B7E4DF",
         elevation: 2,
-
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.06,
-        shadowRadius: 5,
     },
 
     discussionIcon: {
         width: 55,
         height: 55,
-
         borderRadius: 15,
-
         justifyContent: "center",
         alignItems: "center",
-
-        backgroundColor: "#FED7AA",
-
+        backgroundColor: "#FFEDD5",
         marginRight: 15,
     },
-
-
-    /* UPDATES - SOFT YELLOW */
 
     updateCard: {
         flexDirection: "row",
         alignItems: "center",
-
-        backgroundColor: "#FEF3C7",
-
+        backgroundColor: "#FFFFFF",
         borderRadius: 16,
-
         padding: 17,
-
         marginBottom: 25,
-
         borderWidth: 1,
-        borderColor: "#FDE68A",
-
+        borderColor: "#B7E4DF",
         elevation: 2,
-
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.06,
-        shadowRadius: 5,
     },
 
     updateIcon: {
         width: 55,
         height: 55,
-
         borderRadius: 15,
-
         justifyContent: "center",
         alignItems: "center",
-
-        backgroundColor: "#FDE68A",
-
+        backgroundColor: "#FEF3C7",
         marginRight: 15,
     },
-
-
-    /* FEATURE CONTENT */
 
     featureContent: {
         flex: 1,
@@ -562,32 +407,15 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
 
-
-    /* FOOTER - SOFT SKY BLUE */
-
     footerCard: {
         alignItems: "center",
-
-        backgroundColor: "#E0F2FE",
-
+        backgroundColor: "#FFFFFF",
         borderRadius: 18,
-
         padding: 25,
-
         marginBottom: 20,
-
         borderWidth: 1,
-        borderColor: "#BAE6FD",
-
+        borderColor: "#B7E4DF",
         elevation: 2,
-
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.06,
-        shadowRadius: 5,
     },
 
     footerIcon: {
@@ -598,15 +426,16 @@ const styles = StyleSheet.create({
     footerTitle: {
         fontSize: 21,
         fontWeight: "700",
-        color: "#0C4A6E",
+        color: "#155E75",
     },
 
     footerText: {
         fontSize: 16,
         lineHeight: 23,
-        color: "#075985",
+        color: "#0F766E",
         textAlign: "center",
         marginTop: 8,
     },
 
 });
+

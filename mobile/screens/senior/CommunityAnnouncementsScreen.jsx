@@ -1,8 +1,4 @@
-import React, {
-    useCallback,
-    useState,
-} from "react";
-
+import React, { useCallback, useState } from "react";
 import {
     View,
     Text,
@@ -12,122 +8,93 @@ import {
     RefreshControl,
     TouchableOpacity,
 } from "react-native";
-
-import {
-    useFocusEffect,
-} from "@react-navigation/native";
-
-import {
-    useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import API from "../../services/api";
 import AnnouncementCard from "../../components/AnnouncementCard";
 
-const CommunityAnnouncementsScreen = ({
-    route,
-}) => {
-
-    const {
-        communityId,
-        communityName,
-    } = route.params;
-
+const CommunityAnnouncementsScreen = ({ route }) => {
+    const { communityId, communityName } = route.params || {};
     const insets = useSafeAreaInsets();
 
-    const [announcements, setAnnouncements] =
-        useState([]);
+    const [announcements, setAnnouncements] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState("");
 
-    const [loading, setLoading] =
-        useState(true);
-
-    const [refreshing, setRefreshing] =
-        useState(false);
-
-    const [error, setError] =
-        useState("");
-
+    // Fetch announcements
     const fetchAnnouncements = async () => {
-
         try {
-
             setError("");
 
             const response = await API.get(
                 `/communities/${communityId}/announcements`
             );
 
+            console.log("Announcements API response:", response.data);
+
             const data =
-                response.data.announcements ||
-                response.data ||
+                response.data?.data ||
+                response.data?.announcements ||
                 [];
 
-            // Newest announcements first
-            const sortedAnnouncements = [
-                ...data,
-            ].sort((a, b) => {
-                return (
-                    new Date(b.createdAt) -
-                    new Date(a.createdAt)
-                );
-            });
+            const announcementsArray = Array.isArray(data) ? data : [];
 
-            setAnnouncements(
-                sortedAnnouncements
+            // Newest announcements first
+            const sortedAnnouncements = [...announcementsArray].sort(
+                (a, b) =>
+                    new Date(b.createdAt) - new Date(a.createdAt)
             );
 
-        } catch (err) {
+            console.log("Announcements:", sortedAnnouncements);
 
+            setAnnouncements(sortedAnnouncements);
+        } catch (err) {
             console.error(
                 "Fetch announcements error:",
-                err.response?.data ||
-                err.message
+                err.response?.data || err.message
             );
+
+            setAnnouncements([]);
 
             setError(
                 err.response?.data?.message ||
-                "Failed to load announcements."
+                    "Failed to load announcements."
             );
-
         } finally {
-
             setLoading(false);
             setRefreshing(false);
-
         }
     };
 
+    // Reload whenever screen comes into focus
     useFocusEffect(
         useCallback(() => {
-            fetchAnnouncements();
+            if (communityId) {
+                fetchAnnouncements();
+            }
         }, [communityId])
     );
 
+    // Pull to refresh
     const handleRefresh = () => {
         setRefreshing(true);
         fetchAnnouncements();
     };
 
+    // Retry after error
     const handleRetry = () => {
         setLoading(true);
         fetchAnnouncements();
     };
 
-    const renderAnnouncement = ({
-        item,
-    }) => {
+    const renderAnnouncement = ({ item }) => (
+        <AnnouncementCard announcement={item} />
+    );
 
-        return (
-            <AnnouncementCard
-                announcement={item}
-            />
-        );
-    };
-
-    /* LOADING */
-
+    // Loading screen
     if (loading) {
-
         return (
             <View
                 style={[
@@ -138,27 +105,20 @@ const CommunityAnnouncementsScreen = ({
                     },
                 ]}
             >
-
                 <ActivityIndicator
                     size="large"
-                    color="#B45309"
+                    color="#0F766E"
                 />
 
                 <Text style={styles.loadingText}>
                     Loading announcements...
                 </Text>
-
             </View>
         );
     }
 
-    /* ERROR */
-
-    if (
-        error &&
-        announcements.length === 0
-    ) {
-
+    // Error screen
+    if (error && announcements.length === 0) {
         return (
             <View
                 style={[
@@ -169,10 +129,7 @@ const CommunityAnnouncementsScreen = ({
                     },
                 ]}
             >
-
-                <Text style={styles.errorIcon}>
-                    ⚠️
-                </Text>
+                <Text style={styles.errorIcon}>⚠️</Text>
 
                 <Text style={styles.errorTitle}>
                     Unable to Load
@@ -187,191 +144,120 @@ const CommunityAnnouncementsScreen = ({
                     activeOpacity={0.8}
                     onPress={handleRetry}
                 >
-
-                    <Text
-                        style={
-                            styles.retryButtonText
-                        }
-                    >
+                    <Text style={styles.retryButtonText}>
                         Try Again
                     </Text>
-
                 </TouchableOpacity>
-
             </View>
         );
     }
 
     return (
         <View style={styles.container}>
-
-            {/* HEADER */}
-
+            {/* Header */}
             <View
                 style={[
                     styles.header,
                     {
-                        paddingTop:
-                            insets.top + 15,
+                        paddingTop: insets.top + 15,
                     },
                 ]}
             >
-
                 <View style={styles.headerIcon}>
-
                     <Text style={styles.headerIconText}>
                         📢
                     </Text>
-
                 </View>
 
                 <View style={styles.headerContent}>
-
                     <Text
                         style={styles.headerTitle}
                         numberOfLines={1}
                     >
-                        {communityName ||
-                            "Community"}
+                        {communityName || "Community"}
                     </Text>
 
-                    <Text
-                        style={styles.headerSubtitle}
-                    >
+                    <Text style={styles.headerSubtitle}>
                         Community Announcements
                     </Text>
-
                 </View>
-
             </View>
 
-            {/* ANNOUNCEMENTS */}
-
+            {/* Announcements */}
             <FlatList
                 data={announcements}
-
-                keyExtractor={(
-                    item,
-                    index
-                ) =>
-                    item._id ||
-                    index.toString()
+                keyExtractor={(item, index) =>
+                    item?._id || index.toString()
                 }
-
-                renderItem={
-                    renderAnnouncement
-                }
-
+                renderItem={renderAnnouncement}
                 contentContainerStyle={
                     announcements.length === 0
                         ? [
-                            styles.emptyContainer,
-                            {
-                                paddingBottom:
-                                    insets.bottom +
-                                    30,
-                            },
-                        ]
+                              styles.emptyContainer,
+                              {
+                                  paddingBottom:
+                                      insets.bottom + 30,
+                              },
+                          ]
                         : [
-                            styles.listContainer,
-                            {
-                                paddingBottom:
-                                    insets.bottom +
-                                    30,
-                            },
-                        ]
+                              styles.listContainer,
+                              {
+                                  paddingBottom:
+                                      insets.bottom + 30,
+                              },
+                          ]
                 }
-
-                showsVerticalScrollIndicator={
-                    false
-                }
-
+                showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
-                        onRefresh={
-                            handleRefresh
-                        }
-                        colors={["#B45309"]}
-                        tintColor="#B45309"
+                        onRefresh={handleRefresh}
+                        colors={["#0F766E"]}
+                        tintColor="#0F766E"
                     />
                 }
-
                 ListEmptyComponent={
-                    <View
-                        style={
-                            styles.emptyState
-                        }
-                    >
-
-                        <View
-                            style={
-                                styles.emptyIconContainer
-                            }
-                        >
-
-                            <Text
-                                style={
-                                    styles.emptyIcon
-                                }
-                            >
+                    <View style={styles.emptyState}>
+                        <View style={styles.emptyIconContainer}>
+                            <Text style={styles.emptyIcon}>
                                 📢
                             </Text>
-
                         </View>
 
-                        <Text
-                            style={
-                                styles.emptyTitle
-                            }
-                        >
+                        <Text style={styles.emptyTitle}>
                             No Announcements
                         </Text>
 
-                        <Text
-                            style={
-                                styles.emptyText
-                            }
-                        >
-                            There are no
-                            announcements from
-                            this community yet.
+                        <Text style={styles.emptyText}>
+                            There are no announcements from this
+                            community yet.
                         </Text>
-
                     </View>
                 }
             />
-
         </View>
     );
 };
 
 export default CommunityAnnouncementsScreen;
 
-
 const styles = StyleSheet.create({
-
-    /* MAIN SCREEN */
-
+    // Main background same as CommunitiesScreen
     container: {
         flex: 1,
-        backgroundColor: "#FFF8E1",
+        backgroundColor: "#E6F7F5",
     },
 
-
-    /* HEADER */
-
+    // Header
     header: {
         flexDirection: "row",
         alignItems: "center",
-
         backgroundColor: "#FFFFFF",
-
         paddingHorizontal: 20,
         paddingBottom: 17,
 
         borderBottomWidth: 1,
-        borderBottomColor: "#F3E8B3",
+        borderBottomColor: "#B7E4DF",
 
         elevation: 2,
 
@@ -387,13 +273,12 @@ const styles = StyleSheet.create({
     headerIcon: {
         width: 52,
         height: 52,
-
         borderRadius: 15,
 
         justifyContent: "center",
         alignItems: "center",
 
-        backgroundColor: "#FEF3C7",
+        backgroundColor: "#CCFBF1",
 
         marginRight: 14,
     },
@@ -409,25 +294,21 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 22,
         fontWeight: "700",
-        color: "#78350F",
+        color: "#155E75",
     },
 
     headerSubtitle: {
         fontSize: 15,
-        color: "#92400E",
+        color: "#0F766E",
         marginTop: 4,
     },
 
-
-    /* LIST */
-
+    // List
     listContainer: {
         padding: 16,
     },
 
-
-    /* LOADING */
-
+    // Loading / Error
     center: {
         flex: 1,
 
@@ -436,17 +317,14 @@ const styles = StyleSheet.create({
 
         paddingHorizontal: 20,
 
-        backgroundColor: "#FFF8E1",
+        backgroundColor: "#E6F7F5",
     },
 
     loadingText: {
         marginTop: 12,
         fontSize: 16,
-        color: "#78350F",
+        color: "#155E75",
     },
-
-
-    /* ERROR */
 
     errorIcon: {
         fontSize: 45,
@@ -456,7 +334,7 @@ const styles = StyleSheet.create({
     errorTitle: {
         fontSize: 21,
         fontWeight: "700",
-        color: "#78350F",
+        color: "#155E75",
         marginBottom: 8,
     },
 
@@ -469,7 +347,7 @@ const styles = StyleSheet.create({
     },
 
     retryButton: {
-        backgroundColor: "#B45309",
+        backgroundColor: "#0F766E",
 
         paddingHorizontal: 28,
         paddingVertical: 15,
@@ -485,33 +363,27 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 
-
-    /* EMPTY */
-
+    // Empty state
     emptyContainer: {
         flexGrow: 1,
-
         justifyContent: "center",
-
         paddingHorizontal: 20,
     },
 
     emptyState: {
         alignItems: "center",
-
         paddingHorizontal: 20,
     },
 
     emptyIconContainer: {
         width: 85,
         height: 85,
-
         borderRadius: 25,
 
         justifyContent: "center",
         alignItems: "center",
 
-        backgroundColor: "#FEF3C7",
+        backgroundColor: "#CCFBF1",
 
         marginBottom: 18,
     },
@@ -523,18 +395,14 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: 21,
         fontWeight: "700",
-        color: "#78350F",
-
+        color: "#155E75",
         marginBottom: 8,
     },
 
     emptyText: {
         fontSize: 16,
         lineHeight: 24,
-
-        color: "#92400E",
-
+        color: "#0F766E",
         textAlign: "center",
     },
-
 });

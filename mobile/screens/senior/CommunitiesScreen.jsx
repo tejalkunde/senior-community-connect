@@ -22,6 +22,7 @@ import {
     getCommunities,
 } from "../../services/communityService";
 
+
 const CommunitiesScreen = ({ navigation }) => {
 
     const insets = useSafeAreaInsets();
@@ -30,68 +31,145 @@ const CommunitiesScreen = ({ navigation }) => {
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
 
+
+    // =========================
+    // LOAD COMMUNITIES
+    // =========================
+
     useEffect(() => {
         loadCommunities();
     }, []);
 
+
     const loadCommunities = async () => {
         try {
+
             const data = await getCommunities();
 
-            setCommunities(data.communities || data);
+            console.log("Communities API response:", data);
+
+            /*
+             * Supports different API response formats:
+             *
+             * 1. data = [...]
+             *
+             * 2. data = {
+             *      data: [...]
+             *    }
+             *
+             * 3. data = {
+             *      communities: [...]
+             *    }
+             */
+
+            const communityList =
+                Array.isArray(data)
+                    ? data
+                    : data?.data ||
+                      data?.communities ||
+                      [];
+
+            setCommunities(
+                Array.isArray(communityList)
+                    ? communityList
+                    : []
+            );
 
         } catch (error) {
+
             console.log(
                 "Community error:",
-                error.response?.data || error.message
+                error.response?.data ||
+                    error.message
             );
+
+            setCommunities([]);
+
         } finally {
+
             setLoading(false);
+
         }
     };
 
+
+    // =========================
+    // SEARCH
+    // =========================
+
     const filteredCommunities =
-        communities.filter((community) =>
-            community.name
+        communities.filter((community) => {
+
+            const communityName =
+                community?.name || "";
+
+            return communityName
                 .toLowerCase()
-                .includes(search.toLowerCase())
-        );
+                .includes(
+                    search.toLowerCase()
+                );
+
+        });
+
+
+    // =========================
+    // LOADING SCREEN
+    // =========================
 
     if (loading) {
+
         return (
             <View
                 style={[
                     styles.loader,
                     {
-                        paddingTop: insets.top,
+                        paddingTop:
+                            insets.top,
                     },
                 ]}
             >
+
                 <ActivityIndicator
                     size="large"
                     color="#0F766E"
                 />
+
             </View>
         );
+
     }
+
+
+    // =========================
+    // MAIN SCREEN
+    // =========================
 
     return (
         <View
             style={[
                 styles.container,
                 {
-                    paddingTop: insets.top + 15,
+                    paddingTop:
+                        insets.top + 15,
                 },
             ]}
         >
+
+            {/* PAGE TITLE */}
 
             <Text style={styles.title}>
                 Discover Communities
             </Text>
 
+
+            {/* SUBTITLE */}
+
             <Text style={styles.subtitle}>
                 Find a community that interests you
             </Text>
+
+
+            {/* SEARCH */}
 
             <TextInput
                 style={styles.search}
@@ -101,29 +179,41 @@ const CommunitiesScreen = ({ navigation }) => {
                 onChangeText={setSearch}
             />
 
+
+            {/* COMMUNITY LIST */}
+
             <FlatList
                 data={filteredCommunities}
 
-                keyExtractor={(item) => item._id}
+                keyExtractor={(item, index) =>
+                    item?._id ||
+                    index.toString()
+                }
 
                 renderItem={({ item }) => (
+
                     <CommunityCard
                         community={item}
+
                         onPress={() =>
                             navigation.navigate(
                                 "CommunityDetails",
                                 {
-                                    communityId: item._id,
+                                    communityId:
+                                        item._id,
                                 }
                             )
                         }
                     />
+
                 )}
 
                 ListEmptyComponent={
+
                     <Text style={styles.empty}>
                         No communities found.
                     </Text>
+
                 }
 
                 contentContainerStyle={
@@ -139,72 +229,120 @@ const CommunitiesScreen = ({ navigation }) => {
     );
 };
 
+
 export default CommunitiesScreen;
+
+
+// =========================
+// STYLES
+// =========================
 
 const styles = StyleSheet.create({
 
+    // Main screen background
     container: {
         flex: 1,
+
         paddingHorizontal: 18,
+
         backgroundColor: "#E6F7F5",
     },
 
+
+    // Page title
     title: {
         fontSize: 28,
+
         fontWeight: "700",
+
         color: "#155E75",
+
         marginBottom: 5,
     },
 
+
+    // Subtitle
     subtitle: {
         fontSize: 16,
+
         color: "#4B5563",
+
         marginBottom: 15,
     },
 
+
+    // Search box
     search: {
         backgroundColor: "#FFFFFF",
+
         borderWidth: 1,
+
         borderColor: "#B7E4DF",
+
         borderRadius: 14,
+
         paddingHorizontal: 16,
+
         paddingVertical: 15,
+
         fontSize: 17,
+
         color: "#164E63",
+
         marginBottom: 15,
 
         elevation: 2,
 
         shadowColor: "#000",
+
         shadowOffset: {
             width: 0,
             height: 1,
         },
+
         shadowOpacity: 0.05,
+
         shadowRadius: 3,
     },
 
+
+    // Normal list
     list: {
         paddingBottom: 100,
     },
 
+
+    // Empty list
     emptyList: {
         flexGrow: 1,
+
         paddingBottom: 100,
     },
 
+
+    // Loading screen
     loader: {
         flex: 1,
+
         justifyContent: "center",
+
         alignItems: "center",
+
         backgroundColor: "#E6F7F5",
     },
 
+
+    // Empty message
     empty: {
         textAlign: "center",
+
         marginTop: 40,
+
         fontSize: 18,
+
         fontWeight: "600",
+
         color: "#155E75",
     },
+
 });

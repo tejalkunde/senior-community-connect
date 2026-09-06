@@ -1,4 +1,4 @@
-/*import React, {
+import React, {
     createContext,
     useContext,
     useEffect,
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
             password,
         });
 
-        const { token, user } = response.data;
+        const { token, user } = response.data.data;
 
         await saveToken(token);
         await saveUser(user);
@@ -90,8 +90,11 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-export const useAuth = () => useContext(AuthContext);*/
-import React, {
+export const useAuth = () => useContext(AuthContext);
+
+
+
+/*import React, {
     createContext,
     useContext,
     useEffect,
@@ -127,11 +130,7 @@ export const AuthProvider = ({
     const [loading, setLoading] =
         useState(true);
 
-    /*
-    =====================================================
-    LOAD USER
-    =====================================================
-    */
+    
 
     useEffect(() => {
         loadUser();
@@ -161,21 +160,13 @@ export const AuthProvider = ({
         }
     };
 
-    /*
-    =====================================================
-    LOGIN
-    =====================================================
-    */
+    
 
     const login = async (
         email,
         password
     ) => {
-        /*
-        =================================================
-        MOCK MODE
-        =================================================
-        */
+        
 
         if (MOCK_MODE) {
             const normalizedEmail =
@@ -186,11 +177,7 @@ export const AuthProvider = ({
             const normalizedPassword =
                 password.trim();
 
-            /*
-            ---------------------------------------------
-            SENIOR
-            ---------------------------------------------
-            */
+            
 
             if (
                 normalizedEmail ===
@@ -216,11 +203,7 @@ export const AuthProvider = ({
                 return mockUser;
             }
 
-            /*
-            ---------------------------------------------
-            OWNER
-            ---------------------------------------------
-            */
+            
 
             if (
                 normalizedEmail ===
@@ -251,11 +234,6 @@ export const AuthProvider = ({
             );
         }
 
-        /*
-        =================================================
-        REAL BACKEND LOGIN
-        =================================================
-        */
 
         const response =
             await API.post(
@@ -280,11 +258,7 @@ export const AuthProvider = ({
         return user;
     };
 
-    /*
-    =====================================================
-    REGISTER
-    =====================================================
-    */
+    
 
     const register = async (
         name,
@@ -292,11 +266,7 @@ export const AuthProvider = ({
         password,
         role
     ) => {
-        /*
-        =================================================
-        MOCK MODE
-        =================================================
-        */
+       
 
         if (MOCK_MODE) {
             const normalizedEmail =
@@ -319,9 +289,7 @@ export const AuthProvider = ({
                 role,
             };
 
-            /*
-            Save mock user
-            */
+            
 
             await saveToken(
                 "mock-token-123"
@@ -331,10 +299,7 @@ export const AuthProvider = ({
                 mockUser
             );
 
-            /*
-            Login immediately after
-            registration
-            */
+           
 
             setUser(mockUser);
 
@@ -347,11 +312,7 @@ export const AuthProvider = ({
             };
         }
 
-        /*
-        =================================================
-        REAL BACKEND REGISTER
-        =================================================
-        */
+        
 
         const response =
             await API.post(
@@ -367,11 +328,7 @@ export const AuthProvider = ({
         return response.data;
     };
 
-    /*
-    =====================================================
-    LOGOUT
-    =====================================================
-    */
+  
 
     const logout = async () => {
         try {
@@ -388,11 +345,7 @@ export const AuthProvider = ({
         }
     };
 
-    /*
-    =====================================================
-    CONTEXT VALUE
-    =====================================================
-    */
+    
 
     const value = {
         user,
@@ -411,11 +364,7 @@ export const AuthProvider = ({
     );
 };
 
-/*
-=========================================================
-USE AUTH
-=========================================================
-*/
+
 
 export const useAuth = () => {
     const context =
@@ -428,4 +377,4 @@ export const useAuth = () => {
     }
 
     return context;
-};
+};*/

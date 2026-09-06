@@ -33,7 +33,9 @@ const EditCommunityScreen = ({ route, navigation }) => {
             );
 
             const community =
-                response.data.community || response.data;
+              response.data?.data ||
+              response.data?.community ||
+              response.data;
 
             setName(community.name || "");
             setDescription(community.description || "");

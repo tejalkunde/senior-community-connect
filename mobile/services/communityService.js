@@ -1,5 +1,6 @@
 import API from "./api";
 
+
 /* =====================================================
    COMMUNITY
 ===================================================== */
@@ -9,7 +10,11 @@ export const getCommunities = async () => {
         "/communities"
     );
 
-    return response.data;
+    return (
+        response.data?.data ||
+        response.data?.communities ||
+        []
+    );
 };
 
 
@@ -20,7 +25,11 @@ export const getCommunity = async (
         `/communities/${communityId}`
     );
 
-    return response.data;
+    return (
+        response.data?.data ||
+        response.data?.community ||
+        response.data
+    );
 };
 
 
@@ -88,10 +97,14 @@ export const leaveCommunity = async (
 
 export const getMyCommunities = async () => {
     const response = await API.get(
-        "/communities/my"
+        "/communities/joined"
     );
 
-    return response.data;
+    return (
+        response.data?.data ||
+        response.data?.communities ||
+        []
+    );
 };
 
 
@@ -133,7 +146,11 @@ export const getAnnouncements = async (
         `/communities/${communityId}/announcements`
     );
 
-    return response.data;
+    return (
+        response.data?.data ||
+        response.data?.announcements ||
+        []
+    );
 };
 
 
@@ -185,7 +202,11 @@ export const getMessages = async (
         `/communities/${communityId}/messages`
     );
 
-    return response.data;
+    return (
+        response.data?.data ||
+        response.data?.messages ||
+        []
+    );
 };
 
 

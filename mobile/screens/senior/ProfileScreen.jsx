@@ -1,3 +1,4 @@
+
 import React from "react";
 
 import {
@@ -135,14 +136,14 @@ const styles = StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: "#F1EEFF",
+        backgroundColor: "#E6F7F5",
         paddingHorizontal: 20,
     },
 
     title: {
         fontSize: 28,
         fontWeight: "700",
-        color: "#433878",
+        color: "#155E75",
         marginBottom: 20,
     },
 
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
 
         borderWidth: 1,
-        borderColor: "#DDD6FE",
+        borderColor: "#B7E4DF",
 
         elevation: 3,
 
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: "#DDD6FE",
+        backgroundColor: "#CCFBF1",
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 18,
@@ -179,13 +180,13 @@ const styles = StyleSheet.create({
     avatarText: {
         fontSize: 40,
         fontWeight: "700",
-        color: "#433878",
+        color: "#155E75",
     },
 
     name: {
         fontSize: 25,
         fontWeight: "700",
-        color: "#433878",
+        color: "#155E75",
         textAlign: "center",
     },
 
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     },
 
     roleBadge: {
-        backgroundColor: "#E9E3FF",
+        backgroundColor: "#CCFBF1",
         paddingHorizontal: 18,
         paddingVertical: 8,
         borderRadius: 20,
@@ -207,7 +208,7 @@ const styles = StyleSheet.create({
     role: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#6B5B95",
+        color: "#0F766E",
     },
 
     infoCard: {
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
 
         borderWidth: 1,
-        borderColor: "#DDD6FE",
+        borderColor: "#B7E4DF",
 
         elevation: 2,
 
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 19,
         fontWeight: "700",
-        color: "#433878",
+        color: "#155E75",
         marginBottom: 15,
     },
 
@@ -247,7 +248,7 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#6B5B95",
+        color: "#0F766E",
         flex: 1,
     },
 
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
 
     divider: {
         height: 1,
-        backgroundColor: "#E5E7EB",
+        backgroundColor: "#D5EEEB",
     },
 
     logout: {
@@ -279,3 +280,4 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
 });
+

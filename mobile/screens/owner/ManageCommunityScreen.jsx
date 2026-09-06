@@ -60,10 +60,12 @@ const ManageCommunityScreen = ({
                     `/communities/${communityId}`
                 );
 
-            setCommunity(
-                response.data.community ||
-                response.data
-            );
+           const data =
+            response.data?.data ||
+            response.data?.community ||
+            response.data;
+
+          setCommunity(data);
 
         } catch (error) {
 

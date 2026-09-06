@@ -42,7 +42,7 @@ const OwnerMyCommunitiesScreen = ({
         useState("");
 
     // =====================================================
-    // LOAD COMMUNITIES
+    // LOAD OWNER COMMUNITIES
     // =====================================================
 
     const loadCommunities = async () => {
@@ -56,9 +56,20 @@ const OwnerMyCommunitiesScreen = ({
                     "/communities/my"
                 );
 
+            console.log(
+                "Owner communities response:",
+                response.data
+            );
+
+            // Backend returns:
+            // {
+            //     success: true,
+            //     data: [...]
+            // }
+
             const data =
-                response.data.communities ||
-                response.data ||
+                response.data?.data ||
+                response.data?.communities ||
                 [];
 
             setCommunities(
@@ -75,6 +86,8 @@ const OwnerMyCommunitiesScreen = ({
                 error.message
             );
 
+            setCommunities([]);
+
             setError(
                 error.response?.data?.message ||
                 "Unable to load your communities."
@@ -89,7 +102,7 @@ const OwnerMyCommunitiesScreen = ({
     };
 
     // =====================================================
-    // REFRESH WHEN SCREEN GETS FOCUS
+    // LOAD WHEN SCREEN GETS FOCUS
     // =====================================================
 
     useFocusEffect(
@@ -113,7 +126,7 @@ const OwnerMyCommunitiesScreen = ({
     };
 
     // =====================================================
-    // STATUS STYLE
+    // STATUS BACKGROUND
     // =====================================================
 
     const getStatusStyle = (
@@ -135,6 +148,10 @@ const OwnerMyCommunitiesScreen = ({
                 return styles.pending;
         }
     };
+
+    // =====================================================
+    // STATUS TEXT
+    // =====================================================
 
     const getStatusTextStyle = (
         status
@@ -168,6 +185,7 @@ const OwnerMyCommunitiesScreen = ({
             item.status || "PENDING";
 
         return (
+
             <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.8}
@@ -186,7 +204,11 @@ const OwnerMyCommunitiesScreen = ({
 
                 <View style={styles.cardTop}>
 
-                    <View style={styles.communityIcon}>
+                    <View
+                        style={
+                            styles.communityIcon
+                        }
+                    >
 
                         <Text
                             style={
@@ -198,7 +220,11 @@ const OwnerMyCommunitiesScreen = ({
 
                     </View>
 
-                    <View style={styles.titleContainer}>
+                    <View
+                        style={
+                            styles.titleContainer
+                        }
+                    >
 
                         <Text
                             style={styles.name}
@@ -254,22 +280,36 @@ const OwnerMyCommunitiesScreen = ({
                 {/* DESCRIPTION */}
 
                 <Text
-                    style={styles.description}
+                    style={
+                        styles.description
+                    }
                     numberOfLines={3}
                 >
                     {item.description ||
                         "No description available."}
                 </Text>
 
-                {/* MEMBER COUNT */}
+                {/* MEMBERS */}
 
-                <View style={styles.memberRow}>
+                <View
+                    style={
+                        styles.memberRow
+                    }
+                >
 
-                    <Text style={styles.memberIcon}>
+                    <Text
+                        style={
+                            styles.memberIcon
+                        }
+                    >
                         👤
                     </Text>
 
-                    <Text style={styles.memberText}>
+                    <Text
+                        style={
+                            styles.memberText
+                        }
+                    >
                         {item.memberCount || 0} members
                     </Text>
 
@@ -277,13 +317,25 @@ const OwnerMyCommunitiesScreen = ({
 
                 {/* MANAGE */}
 
-                <View style={styles.manageRow}>
+                <View
+                    style={
+                        styles.manageRow
+                    }
+                >
 
-                    <Text style={styles.manageText}>
+                    <Text
+                        style={
+                            styles.manageText
+                        }
+                    >
                         Manage Community
                     </Text>
 
-                    <Text style={styles.arrow}>
+                    <Text
+                        style={
+                            styles.arrow
+                        }
+                    >
                         ›
                     </Text>
 
@@ -300,12 +352,14 @@ const OwnerMyCommunitiesScreen = ({
     if (loading) {
 
         return (
+
             <View
                 style={[
                     styles.center,
                     {
                         paddingTop:
                             insets.top,
+
                         paddingBottom:
                             insets.bottom,
                     },
@@ -317,7 +371,11 @@ const OwnerMyCommunitiesScreen = ({
                     color="#7C3AED"
                 />
 
-                <Text style={styles.loadingText}>
+                <Text
+                    style={
+                        styles.loadingText
+                    }
+                >
                     Loading your communities...
                 </Text>
 
@@ -335,36 +393,56 @@ const OwnerMyCommunitiesScreen = ({
     ) {
 
         return (
+
             <View
                 style={[
                     styles.center,
                     {
                         paddingTop:
                             insets.top,
+
                         paddingBottom:
                             insets.bottom,
                     },
                 ]}
             >
 
-                <View style={styles.errorIconContainer}>
+                <View
+                    style={
+                        styles.errorIconContainer
+                    }
+                >
 
-                    <Text style={styles.errorIcon}>
+                    <Text
+                        style={
+                            styles.errorIcon
+                        }
+                    >
                         ⚠️
                     </Text>
 
                 </View>
 
-                <Text style={styles.errorTitle}>
+                <Text
+                    style={
+                        styles.errorTitle
+                    }
+                >
                     Unable to Load
                 </Text>
 
-                <Text style={styles.errorText}>
+                <Text
+                    style={
+                        styles.errorText
+                    }
+                >
                     {error}
                 </Text>
 
                 <TouchableOpacity
-                    style={styles.retryButton}
+                    style={
+                        styles.retryButton
+                    }
                     activeOpacity={0.8}
                     onPress={() => {
 
@@ -375,7 +453,11 @@ const OwnerMyCommunitiesScreen = ({
                     }}
                 >
 
-                    <Text style={styles.retryText}>
+                    <Text
+                        style={
+                            styles.retryText
+                        }
+                    >
                         Try Again
                     </Text>
 
@@ -390,11 +472,14 @@ const OwnerMyCommunitiesScreen = ({
     // =====================================================
 
     return (
-        <View style={styles.container}>
 
-            {/* ========================================= */}
+        <View
+            style={
+                styles.container
+            }
+        >
+
             {/* HEADER */}
-            {/* ========================================= */}
 
             <View
                 style={[
@@ -406,23 +491,43 @@ const OwnerMyCommunitiesScreen = ({
                 ]}
             >
 
-                <Text style={styles.title}>
+                <Text
+                    style={
+                        styles.title
+                    }
+                >
                     My Communities
                 </Text>
 
-                <Text style={styles.subtitle}>
+                <Text
+                    style={
+                        styles.subtitle
+                    }
+                >
                     Communities created and managed by you
                 </Text>
 
-                {/* COMMUNITY COUNT */}
+                {/* COUNT */}
 
-                <View style={styles.countBadge}>
+                <View
+                    style={
+                        styles.countBadge
+                    }
+                >
 
-                    <Text style={styles.countIcon}>
+                    <Text
+                        style={
+                            styles.countIcon
+                        }
+                    >
                         👥
                     </Text>
 
-                    <Text style={styles.countText}>
+                    <Text
+                        style={
+                            styles.countText
+                        }
+                    >
                         {communities.length}{" "}
                         {communities.length === 1
                             ? "Community"
@@ -433,13 +538,15 @@ const OwnerMyCommunitiesScreen = ({
 
             </View>
 
-            {/* ========================================= */}
             {/* EMPTY STATE */}
-            {/* ========================================= */}
 
             {communities.length === 0 ? (
 
-                <View style={styles.emptyContainer}>
+                <View
+                    style={
+                        styles.emptyContainer
+                    }
+                >
 
                     <View
                         style={
@@ -447,24 +554,38 @@ const OwnerMyCommunitiesScreen = ({
                         }
                     >
 
-                        <Text style={styles.emptyIcon}>
+                        <Text
+                            style={
+                                styles.emptyIcon
+                            }
+                        >
                             🏘️
                         </Text>
 
                     </View>
 
-                    <Text style={styles.emptyTitle}>
+                    <Text
+                        style={
+                            styles.emptyTitle
+                        }
+                    >
                         No Communities Yet
                     </Text>
 
-                    <Text style={styles.emptyText}>
+                    <Text
+                        style={
+                            styles.emptyText
+                        }
+                    >
                         You haven't created any
                         communities yet. Create your
                         first community to get started.
                     </Text>
 
                     <TouchableOpacity
-                        style={styles.createButton}
+                        style={
+                            styles.createButton
+                        }
                         activeOpacity={0.8}
                         onPress={() =>
                             navigation.navigate(
@@ -495,15 +616,12 @@ const OwnerMyCommunitiesScreen = ({
 
             ) : (
 
-                /* ========================================= */
-                /* COMMUNITY LIST */
-                /* ========================================= */
-
                 <FlatList
                     data={communities}
 
-                    keyExtractor={(item) =>
-                        item._id
+                    keyExtractor={(item, index) =>
+                        item?._id ||
+                        index.toString()
                     }
 
                     renderItem={
@@ -514,18 +632,21 @@ const OwnerMyCommunitiesScreen = ({
                         styles.list,
                         {
                             paddingBottom:
-                                insets.bottom +
-                                100,
+                                insets.bottom + 100,
                         },
                     ]}
 
                     refreshControl={
                         <RefreshControl
-                            refreshing={refreshing}
+                            refreshing={
+                                refreshing
+                            }
                             onRefresh={
                                 handleRefresh
                             }
-                            colors={["#7C3AED"]}
+                            colors={[
+                                "#7C3AED",
+                            ]}
                             tintColor="#7C3AED"
                         />
                     }
@@ -537,9 +658,7 @@ const OwnerMyCommunitiesScreen = ({
 
             )}
 
-            {/* ========================================= */}
             {/* FLOATING CREATE BUTTON */}
-            {/* ========================================= */}
 
             <TouchableOpacity
                 style={[
@@ -575,18 +694,10 @@ export default OwnerMyCommunitiesScreen;
 
 const styles = StyleSheet.create({
 
-    /* ========================================= */
-    /* CONTAINER */
-    /* ========================================= */
-
     container: {
         flex: 1,
         backgroundColor: "#F3F0FF",
     },
-
-    /* ========================================= */
-    /* HEADER */
-    /* ========================================= */
 
     header: {
         paddingHorizontal: 20,
@@ -628,18 +739,10 @@ const styles = StyleSheet.create({
         color: "#6B5B95",
     },
 
-    /* ========================================= */
-    /* LIST */
-    /* ========================================= */
-
     list: {
         paddingHorizontal: 20,
         paddingTop: 5,
     },
-
-    /* ========================================= */
-    /* COMMUNITY CARD */
-    /* ========================================= */
 
     card: {
         backgroundColor: "#FFFFFF",
@@ -693,10 +796,6 @@ const styles = StyleSheet.create({
         color: "#6B5B95",
         marginTop: 4,
     },
-
-    /* ========================================= */
-    /* STATUS */
-    /* ========================================= */
 
     statusBadge: {
         flexDirection: "row",
@@ -752,20 +851,12 @@ const styles = StyleSheet.create({
         color: "#4B5563",
     },
 
-    /* ========================================= */
-    /* DESCRIPTION */
-    /* ========================================= */
-
     description: {
         fontSize: 16,
         lineHeight: 23,
         color: "#4B5563",
         marginBottom: 12,
     },
-
-    /* ========================================= */
-    /* MEMBERS */
-    /* ========================================= */
 
     memberRow: {
         flexDirection: "row",
@@ -783,10 +874,6 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#6B5B95",
     },
-
-    /* ========================================= */
-    /* MANAGE */
-    /* ========================================= */
 
     manageRow: {
         flexDirection: "row",
@@ -809,10 +896,6 @@ const styles = StyleSheet.create({
         lineHeight: 28,
     },
 
-    /* ========================================= */
-    /* LOADING */
-    /* ========================================= */
-
     center: {
         flex: 1,
         justifyContent: "center",
@@ -826,10 +909,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#6B5B95",
     },
-
-    /* ========================================= */
-    /* ERROR */
-    /* ========================================= */
 
     errorIconContainer: {
         width: 80,
@@ -873,10 +952,6 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: "700",
     },
-
-    /* ========================================= */
-    /* EMPTY */
-    /* ========================================= */
 
     emptyContainer: {
         flex: 1,
@@ -939,10 +1014,6 @@ const styles = StyleSheet.create({
         fontSize: 17,
         fontWeight: "700",
     },
-
-    /* ========================================= */
-    /* FLOATING BUTTON */
-    /* ========================================= */
 
     floatingButton: {
         position: "absolute",
