@@ -1,0 +1,546 @@
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.hero {
+  position: relative;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
+
+.activity-action {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.refresh-btn:hover {
+  background: #f3f4f6;
+}
+
+.pending-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ================================
+   Admin Header
+================================ */
+
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+
+/* ================================
+   Notification Bell
+================================ */
+
+.notification-btn {
+  position: relative;
+
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+
+  background: #f8fafc;
+  color: #1e293b;
+
+  cursor: pointer;
+
+  outline: none;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+/* Hover */
+
+.notification-btn:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+
+  transform: translateY(-1px);
+}
+
+
+/* Click */
+
+.notification-btn:active {
+  transform: scale(0.95);
+}
+
+
+/* Keyboard focus */
+
+.notification-btn:focus-visible {
+  outline: 3px solid #bfdbfe;
+  outline-offset: 2px;
+}
+
+
+/* ================================
+   Notification Badge
+================================ */
+
+.notification-badge {
+  position: absolute;
+
+  top: -4px;
+  right: -4px;
+
+  min-width: 20px;
+  height: 20px;
+
+  padding: 0 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: #ef4444;
+  color: white;
+
+  border: 2px solid white;
+
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35);
+}
+
+
+/* ================================
+   Notification Attention Animation
+================================ */
+
+.notification-btn:has(.notification-badge) {
+  animation: notification-bell-attention 2.5s ease-in-out infinite;
+}
+
+
+@keyframes notification-bell-attention {
+  0%,
+  85%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  88% {
+    transform: rotate(-7deg);
+  }
+
+  91% {
+    transform: rotate(7deg);
+  }
+
+  94% {
+    transform: rotate(-5deg);
+  }
+
+  97% {
+    transform: rotate(5deg);
+  }
+}
+
+
+/* ================================
+   Administrator Button
+================================ */
+
+.admin-profile-btn {
+  border: none;
+  background: transparent;
+
+  color: #111827;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  padding: 8px 4px;
+
+  transition: color 0.2s ease;
+}
+
+.admin-profile-btn:hover {
+  color: #2563eb;
+}
+
+
+/* =====================================================
+   FINAL NOTIFICATION BUTTON OVERRIDE
+   Keeps the bell from looking like a default browser button
+   ===================================================== */
+
+.admin-header .notification-btn {
+  position: relative !important;
+
+  width: 44px !important;
+  height: 44px !important;
+
+  min-width: 44px !important;
+  min-height: 44px !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  box-sizing: border-box !important;
+
+  appearance: none !important;
+  -webkit-appearance: none !important;
+
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 50% !important;
+
+  background: #f8fafc !important;
+  background-image: none !important;
+
+  color: #1e293b !important;
+
+  cursor: pointer !important;
+
+  outline: none !important;
+
+  box-shadow: none !important;
+
+  font-family: inherit !important;
+  font-size: inherit !important;
+
+  text-align: center !important;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease !important;
+}
+
+
+/* Notification button hover */
+
+.admin-header .notification-btn:hover {
+  background: #eff6ff !important;
+  background-image: none !important;
+
+  border-color: #bfdbfe !important;
+
+  color: #2563eb !important;
+
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12) !important;
+
+  transform: translateY(-1px) !important;
+}
+
+
+/* Notification button click */
+
+.admin-header .notification-btn:active {
+  transform: scale(0.95) !important;
+}
+
+
+/* Notification button focus */
+
+.admin-header .notification-btn:focus,
+.admin-header .notification-btn:focus-visible {
+  outline: none !important;
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+
+/* Bell icon */
+
+.admin-header .notification-btn svg {
+  display: block !important;
+
+  width: 21px !important;
+  height: 21px !important;
+
+  margin: 0 !important;
+
+  color: inherit !important;
+
+  stroke-width: 2 !important;
+}
+
+
+/* =====================================================
+   FINAL NOTIFICATION BADGE OVERRIDE
+   ===================================================== */
+
+.admin-header .notification-badge {
+  position: absolute !important;
+
+  top: -3px !important;
+  right: -3px !important;
+
+  min-width: 20px !important;
+  height: 20px !important;
+
+  padding: 0 5px !important;
+  margin: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  box-sizing: border-box !important;
+
+  border-radius: 999px !important;
+
+  background: #ef4444 !important;
+  color: #ffffff !important;
+
+  border: 2px solid #ffffff !important;
+
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35) !important;
+
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+
+/* =====================================================
+   FINAL HEADER RIGHT SIDE
+   ===================================================== */
+
+.admin-header .admin-header-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 18px !important;
+}
