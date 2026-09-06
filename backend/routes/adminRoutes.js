@@ -7,7 +7,10 @@ import {
     getAdminUsers,
     getAdminUser,
     updateUserStatus,
-    getDashboardStats
+    getDashboardStats,
+    getActivityLogs,
+    getAdminProfile,
+    updateAdminProfile
 } from "../controllers/adminController.js";
 
 import authenticate from "../middleware/authMiddleware.js";
@@ -17,6 +20,13 @@ const router = express.Router();
 
 router.use(authenticate);
 router.use(authorize("ADMIN"));
+
+router.get("/profile", getAdminProfile);
+
+router.patch(
+    "/profile",
+    updateAdminProfile
+);
 
 router.get("/communities", getAdminCommunities);
 
@@ -29,6 +39,7 @@ router.patch(
     "/communities/:id/reject",
     rejectCommunity
 );
+
 router.get("/users", getAdminUsers);
 
 router.get("/users/:id", getAdminUser);
@@ -41,6 +52,11 @@ router.patch(
 router.get(
     "/dashboard",
     getDashboardStats
+);
+
+router.get(
+    "/activity-logs",
+    getActivityLogs
 );
 
 export default router;

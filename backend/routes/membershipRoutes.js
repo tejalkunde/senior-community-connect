@@ -26,7 +26,7 @@ router.delete(
 );
 
 router.get(
-    "/communities/my",
+    "/memberships/my",
     authenticate,
     authorize("SENIOR"),
     getMyJoinedCommunities
