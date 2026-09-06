@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     },
 
     primaryCard: {
-        backgroundColor: "#2563EB",
+        backgroundColor: "#FFFFFF",
         borderRadius: 16,
         padding: 22,
         marginBottom: 16,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     },
 
     primaryCard: {
-        backgroundColor: "#2563EB",
+        backgroundColor: "#FFFFFF",
         borderRadius: 16,
         padding: 22,
         marginBottom: 16,
