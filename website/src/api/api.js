@@ -21,6 +21,7 @@ const apiRequest = async (endpoint, options = {}) => {
     },
   });
 
+  
   const data = await response.json();
 
   if (!response.ok) {
@@ -82,6 +83,19 @@ export const approveCommunity = async (id) => {
 export const rejectCommunity = async (id, reason = "") => {
   return apiRequest(`/admin/communities/${id}/reject`, {
     method: "PATCH",
-    body: JSON.stringify({ reason }),
+    body: JSON.stringify({ rejectionReason: reason }),
   });
+};
+export const apiLogin = async (email, password) => {
+  return apiRequest("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
+};
+// Activity Logs
+export const getActivityLogs = async (params = "") => {
+  return apiRequest(`/admin/activity-logs${params}`);
 };

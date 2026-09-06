@@ -1,109 +1,126 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Eye, Check, X } from "lucide-react";
+import {
+  getCommunities,
+  approveCommunity,
+  rejectCommunity,
+} from "../api/api";
 
 function Communities() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedCommunity, setSelectedCommunity] = useState(null);
 
-  const [communities, setCommunities] = useState([
-    {
-      id: 1,
-      name: "Yoga for Seniors",
-      category: "Health & Wellness",
-      owner: "Amit Verma",
-      members: 45,
-      status: "PENDING",
-      description:
-        "A friendly community for seniors interested in yoga, flexibility, fitness and healthy living.",
-      createdAt: "September 1, 2026",
-    },
-    {
-      id: 2,
-      name: "Morning Walk Club",
-      category: "Fitness",
-      owner: "Vikram Singh",
-      members: 72,
-      status: "APPROVED",
-      description:
-        "A community where senior citizens can join morning walks and stay active together.",
-      createdAt: "August 25, 2026",
-    },
-    {
-      id: 3,
-      name: "Golden Age Friends",
-      category: "Social",
-      owner: "Neha Kapoor",
-      members: 38,
-      status: "PENDING",
-      description:
-        "A social community for seniors to connect, share experiences and make new friends.",
-      createdAt: "August 29, 2026",
-    },
-    {
-      id: 4,
-      name: "Senior Book Club",
-      category: "Education",
-      owner: "Rakesh Mehta",
-      members: 25,
-      status: "APPROVED",
-      description:
-        "A book reading and discussion community for senior citizens.",
-      createdAt: "August 20, 2026",
-    },
-    {
-      id: 5,
-      name: "Healthy Living",
-      category: "Health & Wellness",
-      owner: "Sunita Patel",
-      members: 31,
-      status: "REJECTED",
-      description:
-        "A community focused on healthy lifestyle discussions and activities.",
-      createdAt: "August 18, 2026",
-    },
-  ]);
+  const [communities, setCommunities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // Load real communities
+  const loadCommunities = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await getCommunities();
+
+      setCommunities(response.data || []);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCommunities();
+  }, []);
+
+  // Search + status filter
   const filteredCommunities = communities.filter((community) => {
+    const ownerName = community.owner?.name || "";
+    const communityName = community.name || "";
+
     const matchesSearch =
-      community.name.toLowerCase().includes(search.toLowerCase()) ||
-      community.owner.toLowerCase().includes(search.toLowerCase());
+      communityName
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      ownerName
+        .toLowerCase()
+        .includes(search.toLowerCase());
 
     const matchesStatus =
-      statusFilter === "ALL" || community.status === statusFilter;
+      statusFilter === "ALL" ||
+      community.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  const updateStatus = (id, newStatus) => {
-    setCommunities((currentCommunities) =>
-      currentCommunities.map((community) =>
-        community.id === id
-          ? { ...community, status: newStatus }
-          : community
-      )
+  // Approve community
+  const handleApprove = async (community) => {
+    const confirmed = window.confirm(
+      `Approve "${community.name}" community?`
     );
 
-    setSelectedCommunity((current) =>
-      current && current.id === id
-        ? { ...current, status: newStatus }
-        : current
-    );
-  };
+    if (!confirmed) return;
 
-  const handleApprove = (id, name) => {
-    const confirmed = window.confirm(`Approve "${name}" community?`);
+    try {
+      setError("");
 
-    if (confirmed) {
-      updateStatus(id, "APPROVED");
+      const response = await approveCommunity(community._id);
+
+      const updatedCommunity = response.data;
+
+      setCommunities((currentCommunities) =>
+        currentCommunities.map((item) =>
+          item._id === community._id
+            ? updatedCommunity
+            : item
+        )
+      );
+
+      setSelectedCommunity((current) =>
+        current && current._id === community._id
+          ? updatedCommunity
+          : current
+      );
+    } catch (error) {
+      setError(error.message);
     }
   };
 
-  const handleReject = (id, name) => {
-    const confirmed = window.confirm(`Reject "${name}" community?`);
+  // Reject community
+  const handleReject = async (community) => {
+    const reason = window.prompt(
+      `Why do you want to reject "${community.name}"?`
+    );
 
-    if (confirmed) {
-      updateStatus(id, "REJECTED");
+    if (reason === null) return;
+
+    try {
+      setError("");
+
+      const response = await rejectCommunity(
+        community._id,
+        reason
+      );
+
+      const updatedCommunity = response.data;
+
+      setCommunities((currentCommunities) =>
+        currentCommunities.map((item) =>
+          item._id === community._id
+            ? updatedCommunity
+            : item
+        )
+      );
+
+      setSelectedCommunity((current) =>
+        current && current._id === community._id
+          ? updatedCommunity
+          : current
+      );
+    } catch (error) {
+      setError(error.message);
     }
   };
 
@@ -113,6 +130,12 @@ function Communities() {
         <h1>Communities</h1>
         <p>Manage and approve communities</p>
       </div>
+
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
 
       <div className="table-card">
         <div className="communities-toolbar">
@@ -129,7 +152,9 @@ function Communities() {
 
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) =>
+              setStatusFilter(e.target.value)
+            }
           >
             <option value="ALL">All Status</option>
             <option value="PENDING">Pending</option>
@@ -139,101 +164,122 @@ function Communities() {
         </div>
 
         <div className="users-table-wrapper">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>Community</th>
-                <th>Category</th>
-                <th>Owner</th>
-                <th>Members</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+          {loading ? (
+            <div className="dashboard-empty">
+              <p>Loading communities...</p>
+            </div>
+          ) : (
+            <table className="users-table">
+              <thead>
+                <tr>
+                  <th>Community</th>
+                  <th>Category</th>
+                  <th>Owner</th>
+                  <th>Members</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {filteredCommunities.length > 0 ? (
-                filteredCommunities.map((community) => (
-                  <tr key={community.id}>
-                    <td>
-                      <strong>{community.name}</strong>
-                    </td>
+              <tbody>
+                {filteredCommunities.length > 0 ? (
+                  filteredCommunities.map((community) => (
+                    <tr key={community._id}>
+                      <td>
+                        <strong>{community.name}</strong>
+                      </td>
 
-                    <td>{community.category}</td>
+                      <td>{community.category}</td>
 
-                    <td>{community.owner}</td>
+                      <td>
+                        {community.owner?.name || "Unknown"}
+                      </td>
 
-                    <td>{community.members}</td>
+                      <td>
+                        {community.membersCount ??
+                          community.members?.length ??
+                          0}
+                      </td>
 
-                    <td>
-                      <span
-                        className={`community-status ${community.status.toLowerCase()}`}
-                      >
-                        {community.status}
-                      </span>
-                    </td>
-
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          className="icon-btn"
-                          title="View community"
-                          onClick={() =>
-                            setSelectedCommunity(community)
-                          }
+                      <td>
+                        <span
+                          className={`community-status ${community.status.toLowerCase()}`}
                         >
-                          <Eye size={17} />
-                        </button>
+                          {community.status}
+                        </span>
+                      </td>
 
-                        {community.status === "PENDING" && (
-                          <>
-                            <button
-                              className="icon-btn approve-btn"
-                              title="Approve community"
-                              onClick={() =>
-                                handleApprove(
-                                  community.id,
-                                  community.name
-                                )
-                              }
-                            >
-                              <Check size={17} />
-                            </button>
+                      <td>
+                        <div className="action-buttons">
+                          {/* View */}
+                          <button
+                            className="icon-btn"
+                            title="View community"
+                            onClick={() =>
+                              setSelectedCommunity(
+                                community
+                              )
+                            }
+                          >
+                            <Eye size={17} />
+                          </button>
 
-                            <button
-                              className="icon-btn reject-btn"
-                              title="Reject community"
-                              onClick={() =>
-                                handleReject(
-                                  community.id,
-                                  community.name
-                                )
-                              }
-                            >
-                              <X size={17} />
-                            </button>
-                          </>
-                        )}
-                      </div>
+                          {/* Approve / Reject */}
+                          {community.status ===
+                            "PENDING" && (
+                            <>
+                              <button
+                                className="icon-btn approve-btn"
+                                title="Approve community"
+                                onClick={() =>
+                                  handleApprove(
+                                    community
+                                  )
+                                }
+                              >
+                                <Check size={17} />
+                              </button>
+
+                              <button
+                                className="icon-btn reject-btn"
+                                title="Reject community"
+                                onClick={() =>
+                                  handleReject(
+                                    community
+                                  )
+                                }
+                              >
+                                <X size={17} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      className="no-users"
+                    >
+                      No communities found.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="no-users">
-                    No communities found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
+      {/* COMMUNITY DETAILS MODAL */}
       {selectedCommunity && (
         <div
           className="modal-overlay"
-          onClick={() => setSelectedCommunity(null)}
+          onClick={() =>
+            setSelectedCommunity(null)
+          }
         >
           <div
             className="community-modal"
@@ -247,7 +293,9 @@ function Communities() {
 
               <button
                 className="modal-close"
-                onClick={() => setSelectedCommunity(null)}
+                onClick={() =>
+                  setSelectedCommunity(null)
+                }
               >
                 <X size={20} />
               </button>
@@ -256,21 +304,39 @@ function Communities() {
             <div className="community-details">
               <div className="detail-item">
                 <span>Category</span>
-                <strong>{selectedCommunity.category}</strong>
+                <strong>
+                  {selectedCommunity.category}
+                </strong>
               </div>
 
               <div className="detail-item">
                 <span>Owner</span>
-                <strong>{selectedCommunity.owner}</strong>
+                <strong>
+                  {selectedCommunity.owner?.name ||
+                    "Unknown"}
+                </strong>
+              </div>
+
+              <div className="detail-item">
+                <span>Owner Email</span>
+                <strong>
+                  {selectedCommunity.owner?.email ||
+                    "N/A"}
+                </strong>
               </div>
 
               <div className="detail-item">
                 <span>Members</span>
-                <strong>{selectedCommunity.members}</strong>
+                <strong>
+                  {selectedCommunity.membersCount ??
+                    selectedCommunity.members?.length ??
+                    0}
+                </strong>
               </div>
 
               <div className="detail-item">
                 <span>Status</span>
+
                 <span
                   className={`community-status ${selectedCommunity.status.toLowerCase()}`}
                 >
@@ -280,23 +346,32 @@ function Communities() {
 
               <div className="detail-item full-width">
                 <span>Description</span>
-                <p>{selectedCommunity.description}</p>
+                <p>
+                  {selectedCommunity.description ||
+                    "No description provided."}
+                </p>
               </div>
 
               <div className="detail-item">
                 <span>Created</span>
-                <strong>{selectedCommunity.createdAt}</strong>
+                <strong>
+                  {selectedCommunity.createdAt
+                    ? new Date(
+                        selectedCommunity.createdAt
+                      ).toLocaleDateString()
+                    : "N/A"}
+                </strong>
               </div>
             </div>
 
-            {selectedCommunity.status === "PENDING" && (
+            {selectedCommunity.status ===
+              "PENDING" && (
               <div className="modal-actions">
                 <button
                   className="approve-community-btn"
                   onClick={() =>
                     handleApprove(
-                      selectedCommunity.id,
-                      selectedCommunity.name
+                      selectedCommunity
                     )
                   }
                 >
@@ -308,8 +383,7 @@ function Communities() {
                   className="reject-community-btn"
                   onClick={() =>
                     handleReject(
-                      selectedCommunity.id,
-                      selectedCommunity.name
+                      selectedCommunity
                     )
                   }
                 >
@@ -321,7 +395,9 @@ function Communities() {
 
             <button
               className="close-modal-btn"
-              onClick={() => setSelectedCommunity(null)}
+              onClick={() =>
+                setSelectedCommunity(null)
+              }
             >
               Close
             </button>

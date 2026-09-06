@@ -1,19 +1,42 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiLogin } from "../api/api";
 
 function Login() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Temporary login until Diksha's backend is connected
-    localStorage.setItem("adminToken", "temporary-admin-token");
+    setError("");
+    setLoading(true);
 
-    navigate("/dashboard");
+    try {
+      const response = await apiLogin(email, password);
+
+      if (response.data.user.role !== "ADMIN") {
+        setError("You are not authorized to access the Admin Portal.");
+        return;
+      }
+
+      localStorage.setItem("adminToken", response.data.token);
+
+      localStorage.setItem(
+        "adminUser",
+        JSON.stringify(response.data.user)
+      );
+
+      navigate("/dashboard");
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,15 +66,21 @@ function Login() {
 
             <input
               type="password"
-              placeholder="Enter password"
+              placeholder="Enter admin password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
 
-          <button type="submit">
-            Login
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>

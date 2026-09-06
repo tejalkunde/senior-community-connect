@@ -1,202 +1,167 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
+  UserRound,
+  ShieldCheck,
   Building2,
-  UserCheck,
   Clock,
-  ArrowRight,
   CheckCircle,
+  ArrowRight,
 } from "lucide-react";
 
+import { getDashboardStats } from "../api/api";
+import "./Dashboard.css";
 function Dashboard() {
   const navigate = useNavigate();
 
-  const stats = [
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    seniorCitizens: 0,
+    communityOwners: 0,
+    totalCommunities: 0,
+    pendingCommunities: 0,
+    approvedCommunities: 0,
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const response = await getDashboardStats();
+
+        setStats(response.data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const statCards = [
     {
       title: "Total Users",
-      value: "1,250",
+      value: stats.totalUsers,
       icon: Users,
     },
     {
       title: "Senior Citizens",
-      value: "980",
-      icon: UserCheck,
+      value: stats.seniorCitizens,
+      icon: UserRound,
     },
     {
       title: "Community Owners",
-      value: "120",
-      icon: Users,
+      value: stats.communityOwners,
+      icon: ShieldCheck,
     },
     {
       title: "Total Communities",
-      value: "150",
+      value: stats.totalCommunities,
       icon: Building2,
     },
     {
       title: "Pending Approvals",
-      value: "12",
+      value: stats.pendingCommunities,
       icon: Clock,
     },
     {
       title: "Approved Communities",
-      value: "138",
+      value: stats.approvedCommunities,
       icon: CheckCircle,
     },
   ];
 
-  const pendingCommunities = [
-    {
-      name: "Yoga for Seniors",
-      owner: "Amit Verma",
-      category: "Health & Wellness",
-    },
-    {
-      name: "Golden Age Friends",
-      owner: "Neha Kapoor",
-      category: "Social",
-    },
-    {
-      name: "Happy Senior Club",
-      owner: "Rohit Sharma",
-      category: "Social",
-    },
-  ];
-
-  const recentUsers = [
-    {
-      name: "Rajesh Kumar",
-      role: "Senior Citizen",
-      time: "10 minutes ago",
-    },
-    {
-      name: "Amit Verma",
-      role: "Community Owner",
-      time: "30 minutes ago",
-    },
-    {
-      name: "Priya Sharma",
-      role: "Senior Citizen",
-      time: "1 hour ago",
-    },
-  ];
+  if (loading) {
+    return (
+      <div className="dashboard-page">
+        <div className="page-title">
+          <h1>Dashboard</h1>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="dashboard">
+    <div className="dashboard-page">
       <div className="page-title">
         <h1>Dashboard</h1>
         <p>Overview of Senior Community Connect</p>
       </div>
 
-      {/* Stats */}
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
+
       <div className="stats-grid">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
+        {statCards.map((card) => {
+          const Icon = card.icon;
 
           return (
-            <div className="stat-card" key={stat.title}>
+            <div className="stat-card" key={card.title}>
               <div className="stat-icon">
-                <Icon size={22} />
+                <Icon size={24} />
               </div>
 
-              <div>
-                <p>{stat.title}</p>
-                <h2>{stat.value}</h2>
+              <div className="stat-info">
+                <p>{card.title}</p>
+                <h2>{card.value}</h2>
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="dashboard-grid">
-        {/* Pending Communities */}
-        <div className="dashboard-section">
-          <div className="section-header">
+      <div className="dashboard-sections">
+        <div className="dashboard-card">
+          <div className="dashboard-card-header">
             <div>
-              <h2>Pending Approvals</h2>
-              <p>Communities waiting for admin approval</p>
+              <h2>Pending Community Approvals</h2>
+              <p>Communities waiting for admin review</p>
             </div>
 
-            <button
-              className="view-all-btn"
-              onClick={() => navigate("/communities")}
-            >
+            <button onClick={() => navigate("/communities")}>
               View All
               <ArrowRight size={16} />
             </button>
           </div>
 
-          <div className="dashboard-list">
-            {pendingCommunities.map((community) => (
-              <div className="dashboard-list-item" key={community.name}>
-                <div>
-                  <strong>{community.name}</strong>
-                  <span>
-                    {community.category} · {community.owner}
-                  </span>
-                </div>
-
-                <span className="community-status pending">
-                  PENDING
-                </span>
-              </div>
-            ))}
+          <div className="dashboard-empty">
+            <Clock size={32} />
+            <p>
+              {stats.pendingCommunities === 0
+                ? "No pending communities"
+                : `${stats.pendingCommunities} communities waiting for approval`}
+            </p>
           </div>
         </div>
 
-        {/* Recent Users */}
-        <div className="dashboard-section">
-          <div className="section-header">
+        <div className="dashboard-card">
+          <div className="dashboard-card-header">
             <div>
-              <h2>Recent Users</h2>
-              <p>Recently registered users</p>
+              <h2>Quick Actions</h2>
+              <p>Manage the platform</p>
             </div>
+          </div>
 
-            <button
-              className="view-all-btn"
-              onClick={() => navigate("/users")}
-            >
-              View All
-              <ArrowRight size={16} />
+          <div className="quick-actions">
+            <button onClick={() => navigate("/users")}>
+              <Users size={18} />
+              Manage Users
+            </button>
+
+            <button onClick={() => navigate("/communities")}>
+              <Building2 size={18} />
+              Manage Communities
             </button>
           </div>
-
-          <div className="dashboard-list">
-            {recentUsers.map((user) => (
-              <div className="dashboard-list-item" key={user.email}>
-                <div>
-                  <strong>{user.name}</strong>
-                  <span>{user.role}</span>
-                </div>
-
-                <small>{user.time}</small>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <h2>Quick Actions</h2>
-
-        <div className="quick-actions-grid">
-          <button onClick={() => navigate("/users")}>
-            <Users size={20} />
-            <span>
-              <strong>Manage Users</strong>
-              <small>View and manage platform users</small>
-            </span>
-            <ArrowRight size={18} />
-          </button>
-
-          <button onClick={() => navigate("/communities")}>
-            <Building2 size={20} />
-            <span>
-              <strong>Review Communities</strong>
-              <small>Approve or reject communities</small>
-            </span>
-            <ArrowRight size={18} />
-          </button>
         </div>
       </div>
     </div>

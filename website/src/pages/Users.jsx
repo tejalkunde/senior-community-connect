@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   Eye,
@@ -8,65 +8,51 @@ import {
   Edit,
   X,
 } from "lucide-react";
+import {
+  getUsers,
+  getUserById,
+  updateUserStatus,
+} from "../api/api";
 
 function Users() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
+
+  const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
 
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "Rajesh Kumar",
-      email: "rajesh@gmail.com",
-      role: "SENIOR",
-      status: "Active",
-      phone: "+91 9876543210",
-      createdAt: "September 1, 2026",
-    },
-    {
-      id: 2,
-      name: "Priya Sharma",
-      email: "priya@gmail.com",
-      role: "SENIOR",
-      status: "Active",
-      phone: "+91 9876543211",
-      createdAt: "August 29, 2026",
-    },
-    {
-      id: 3,
-      name: "Amit Verma",
-      email: "amit@gmail.com",
-      role: "OWNER",
-      status: "Active",
-      phone: "+91 9876543212",
-      createdAt: "August 27, 2026",
-    },
-    {
-      id: 4,
-      name: "Sunita Patel",
-      email: "sunita@gmail.com",
-      role: "SENIOR",
-      status: "Inactive",
-      phone: "+91 9876543213",
-      createdAt: "August 24, 2026",
-    },
-    {
-      id: 5,
-      name: "Vikram Singh",
-      email: "vikram@gmail.com",
-      role: "OWNER",
-      status: "Active",
-      phone: "+91 9876543214",
-      createdAt: "August 20, 2026",
-    },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // Fetch real users
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await getUsers();
+
+      setUsers(response.data || []);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  // Search + role filter
   const filteredUsers = users.filter((user) => {
+    const name = user.name?.toLowerCase() || "";
+    const email = user.email?.toLowerCase() || "";
+
     const matchesSearch =
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase());
+      name.includes(search.toLowerCase()) ||
+      email.includes(search.toLowerCase());
 
     const matchesRole =
       roleFilter === "ALL" || user.role === roleFilter;
@@ -74,56 +60,55 @@ function Users() {
     return matchesSearch && matchesRole;
   });
 
-  const toggleStatus = (id) => {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === id
+  // Activate / Deactivate user
+  const toggleStatus = async (user) => {
+    try {
+      const newStatus = !user.isActive;
+
+      await updateUserStatus(user._id, newStatus);
+
+      setUsers((currentUsers) =>
+        currentUsers.map((currentUser) =>
+          currentUser._id === user._id
+            ? {
+                ...currentUser,
+                isActive: newStatus,
+              }
+            : currentUser
+        )
+      );
+
+      setSelectedUser((current) =>
+        current && current._id === user._id
           ? {
-              ...user,
-              status:
-                user.status === "Active" ? "Inactive" : "Active",
+              ...current,
+              isActive: newStatus,
             }
-          : user
-      )
-    );
-
-    setSelectedUser((current) =>
-      current && current.id === id
-        ? {
-            ...current,
-            status:
-              current.status === "Active" ? "Inactive" : "Active",
-          }
-        : current
-    );
+          : current
+      );
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
-  const deleteUser = (id, name) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${name}"?`
-    );
-
-    if (!confirmed) return;
-
-    setUsers((currentUsers) =>
-      currentUsers.filter((user) => user.id !== id)
-    );
-
-    setSelectedUser(null);
-    setEditingUser(null);
+  // View user details
+  const viewUser = async (user) => {
+    try {
+      const response = await getUserById(user._id);
+      setSelectedUser(response.data);
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
-  const saveUser = () => {
-    if (!editingUser) return;
+  // Edit is not supported by current backend
+  const handleEdit = () => {
+    setError("Edit user API is not available yet.");
+  };
 
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === editingUser.id ? editingUser : user
-      )
-    );
-
-    setSelectedUser(editingUser);
-    setEditingUser(null);
+  // Delete is not supported by current backend
+  const handleDelete = () => {
+    setError("Delete user API is not available yet.");
   };
 
   return (
@@ -132,6 +117,12 @@ function Users() {
         <h1>Users</h1>
         <p>Manage platform users</p>
       </div>
+
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
 
       <div className="table-card">
         <div className="users-toolbar">
@@ -157,93 +148,102 @@ function Users() {
         </div>
 
         <div className="users-table-wrapper">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+          {loading ? (
+            <div className="dashboard-empty">
+              <p>Loading users...</p>
+            </div>
+          ) : (
+            <table className="users-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <strong>{user.name}</strong>
-                    </td>
+              <tbody>
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <tr key={user._id}>
+                      <td>
+                        <strong>{user.name}</strong>
+                      </td>
 
-                    <td>{user.email}</td>
+                      <td>{user.email}</td>
 
-                    <td>
-                      <span
-                        className={`role-badge ${user.role.toLowerCase()}`}
-                      >
-                        {user.role === "SENIOR"
-                          ? "Senior Citizen"
-                          : "Community Owner"}
-                      </span>
-                    </td>
-
-                    <td>
-                      <span
-                        className={`status-badge ${user.status.toLowerCase()}`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          className="icon-btn"
-                          title="View user"
-                          onClick={() => setSelectedUser(user)}
+                      <td>
+                        <span
+                          className={`role-badge ${user.role.toLowerCase()}`}
                         >
-                          <Eye size={17} />
-                        </button>
+                          {user.role === "SENIOR"
+                            ? "Senior Citizen"
+                            : "Community Owner"}
+                        </span>
+                      </td>
 
-                        <button
-                          className="icon-btn"
-                          title={
-                            user.status === "Active"
-                              ? "Deactivate user"
-                              : "Activate user"
-                          }
-                          onClick={() => toggleStatus(user.id)}
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            user.isActive ? "active" : "inactive"
+                          }`}
                         >
-                          {user.status === "Active" ? (
-                            <UserX size={17} />
-                          ) : (
-                            <UserCheck size={17} />
-                          )}
-                        </button>
+                          {user.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
 
-                        <button
-                          className="icon-btn reject-btn"
-                          title="Delete user"
-                          onClick={() =>
-                            deleteUser(user.id, user.name)
-                          }
-                        >
-                          <Trash2 size={17} />
-                        </button>
-                      </div>
+                      <td>
+                        <div className="action-buttons">
+                          {/* View */}
+                          <button
+                            className="icon-btn"
+                            title="View user"
+                            onClick={() => viewUser(user)}
+                          >
+                            <Eye size={17} />
+                          </button>
+
+                          {/* Activate / Deactivate */}
+                          <button
+                            className="icon-btn"
+                            title={
+                              user.isActive
+                                ? "Deactivate user"
+                                : "Activate user"
+                            }
+                            onClick={() => toggleStatus(user)}
+                          >
+                            {user.isActive ? (
+                              <UserX size={17} />
+                            ) : (
+                              <UserCheck size={17} />
+                            )}
+                          </button>
+
+                          {/* Delete - backend not available */}
+                          <button
+                            className="icon-btn reject-btn"
+                            title="Delete user"
+                            onClick={handleDelete}
+                          >
+                            <Trash2 size={17} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="no-users">
+                      No users found.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="no-users">
-                    No users found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -284,7 +284,9 @@ function Users() {
 
               <div className="detail-item">
                 <span>Phone</span>
-                <strong>{selectedUser.phone}</strong>
+                <strong>
+                  {selectedUser.phone || "Not provided"}
+                </strong>
               </div>
 
               <div className="detail-item">
@@ -300,36 +302,50 @@ function Users() {
                 <span>Status</span>
 
                 <span
-                  className={`status-badge ${selectedUser.status.toLowerCase()}`}
+                  className={`status-badge ${
+                    selectedUser.isActive
+                      ? "active"
+                      : "inactive"
+                  }`}
                 >
-                  {selectedUser.status}
+                  {selectedUser.isActive
+                    ? "Active"
+                    : "Inactive"}
                 </span>
               </div>
 
               <div className="detail-item">
                 <span>Account Created</span>
-                <strong>{selectedUser.createdAt}</strong>
+                <strong>
+                  {selectedUser.createdAt
+                    ? new Date(
+                        selectedUser.createdAt
+                      ).toLocaleDateString()
+                    : "N/A"}
+                </strong>
               </div>
             </div>
 
             <div className="user-modal-actions">
+              {/* Edit */}
               <button
                 className="activate-user-btn"
-                onClick={() => setEditingUser({ ...selectedUser })}
+                onClick={handleEdit}
               >
                 <Edit size={18} />
                 Edit User
               </button>
 
+              {/* Status */}
               <button
                 className={
-                  selectedUser.status === "Active"
+                  selectedUser.isActive
                     ? "deactivate-user-btn"
                     : "activate-user-btn"
                 }
-                onClick={() => toggleStatus(selectedUser.id)}
+                onClick={() => toggleStatus(selectedUser)}
               >
-                {selectedUser.status === "Active" ? (
+                {selectedUser.isActive ? (
                   <>
                     <UserX size={18} />
                     Deactivate User
@@ -342,14 +358,10 @@ function Users() {
                 )}
               </button>
 
+              {/* Delete */}
               <button
                 className="reject-community-btn"
-                onClick={() =>
-                  deleteUser(
-                    selectedUser.id,
-                    selectedUser.name
-                  )
-                }
+                onClick={handleDelete}
               >
                 <Trash2 size={18} />
                 Delete User
@@ -390,81 +402,17 @@ function Users() {
               </button>
             </div>
 
-            <div className="edit-user-form">
-              <div className="form-group">
-                <label>Name</label>
-                <input
-                  type="text"
-                  value={editingUser.name}
-                  onChange={(e) =>
-                    setEditingUser({
-                      ...editingUser,
-                      name: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  value={editingUser.email}
-                  onChange={(e) =>
-                    setEditingUser({
-                      ...editingUser,
-                      email: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Phone</label>
-                <input
-                  type="text"
-                  value={editingUser.phone}
-                  onChange={(e) =>
-                    setEditingUser({
-                      ...editingUser,
-                      phone: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Role</label>
-
-                <select
-                  value={editingUser.role}
-                  onChange={(e) =>
-                    setEditingUser({
-                      ...editingUser,
-                      role: e.target.value,
-                    })
-                  }
-                >
-                  <option value="SENIOR">Senior Citizen</option>
-                  <option value="OWNER">Community Owner</option>
-                </select>
-              </div>
-            </div>
+            <p>
+              Edit functionality will be connected once the
+              backend update-user API is added.
+            </p>
 
             <div className="user-modal-actions">
-              <button
-                className="activate-user-btn"
-                onClick={saveUser}
-              >
-                <UserCheck size={18} />
-                Save Changes
-              </button>
-
               <button
                 className="close-modal-btn"
                 onClick={() => setEditingUser(null)}
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>
