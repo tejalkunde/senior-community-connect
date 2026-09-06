@@ -10,48 +10,69 @@ import {
 
 import { useAuth } from "../context/authcontext";
 
-// ==================== AUTH ====================
+// =====================================================
+// AUTH
+// =====================================================
 
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 
-// ==================== SENIOR ====================
+// =====================================================
+// SENIOR BOTTOM NAVIGATION
+// =====================================================
 
-import HomeScreen from "../screens/senior/HomeScreen";
-import CommunitiesScreen from "../screens/senior/CommunitiesScreen";
-import MyCommunitiesScreen from "../screens/senior/MyCommunitiesScreen";
+import SeniorBottomTabs from "./SeniorBottomTabs";
+
+// =====================================================
+// SENIOR STACK SCREENS
+// =====================================================
+
 import CommunityDetailsScreen from "../screens/senior/CommunityDetailsScreen";
-import ProfileScreen from "../screens/senior/ProfileScreen";
 import DiscussionScreen from "../screens/senior/DiscussionScreen";
 import CommunityAnnouncementsScreen from "../screens/senior/CommunityAnnouncementsScreen";
 
-// ==================== OWNER ====================
+// =====================================================
+// OWNER BOTTOM NAVIGATION
+// =====================================================
 
-import OwnerDashboardScreen from "../screens/owner/OwnerDashboardScreen";
-import OwnerMyCommunitiesScreen from "../screens/owner/OwnerMyCommunitiesScreen";
+import OwnerBottomTabs from "./OwnerBottomTabs.js";
+
+// =====================================================
+// OWNER STACK SCREENS
+// =====================================================
+
 import CreateCommunityScreen from "../screens/owner/CreateCommunityScreen";
 import ManageCommunityScreen from "../screens/owner/ManageCommunityScreen";
 import EditCommunityScreen from "../screens/owner/EditCommunityScreen";
 import ManageMembersScreen from "../screens/owner/ManageMembersScreen";
 
 import CreateAnnouncementScreen from "../screens/owner/CreateAnnouncementScreen";
-import AnnouncementsScreen from "../screens/owner/AnnouncementsScreen";
 import EditAnnouncementScreen from "../screens/owner/EditAnnounceMentScreen";
 
-// ==================== STACK ====================
+// =====================================================
+// STACK
+// =====================================================
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
-    const { user, loading } = useAuth();
 
-    // Wait until authentication state is loaded
+    const {
+        user,
+        loading,
+    } = useAuth();
+
+    // =====================================================
+    // WAIT FOR AUTHENTICATION
+    // =====================================================
+
     if (loading) {
         return null;
     }
 
     return (
         <NavigationContainer>
+
             <Stack.Navigator
                 screenOptions={{
                     headerTitleAlign: "center",
@@ -63,7 +84,9 @@ const AppNavigator = () => {
                 {/* ================================================= */}
 
                 {!user ? (
+
                     <>
+
                         <Stack.Screen
                             name="Login"
                             component={LoginScreen}
@@ -79,6 +102,7 @@ const AppNavigator = () => {
                                 title: "Create Account",
                             }}
                         />
+
                     </>
 
                 ) : user.role === "OWNER" ? (
@@ -88,95 +112,103 @@ const AppNavigator = () => {
                     /* ================================================= */
 
                     <>
-                        {/* Owner Dashboard */}
+
+                        {/* ============================================= */}
+                        {/* OWNER BOTTOM TABS */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
-                            name="OwnerDashboard"
-                            component={OwnerDashboardScreen}
+                            name="OwnerTabs"
+                            component={OwnerBottomTabs}
                             options={{
-                                title: "Owner Dashboard",
+                                headerShown: false,
                             }}
                         />
 
-                        {/* My Communities */}
-
-                        <Stack.Screen
-                            name="OwnerMyCommunities"
-                            component={OwnerMyCommunitiesScreen}
-                            options={{
-                                title: "My Communities",
-                            }}
-                        />
-
-                        {/* Create Community */}
+                        {/* ============================================= */}
+                        {/* CREATE COMMUNITY */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
                             name="CreateCommunity"
-                            component={CreateCommunityScreen}
+                            component={
+                                CreateCommunityScreen
+                            }
                             options={{
                                 title: "Create Community",
                             }}
                         />
 
-                        {/* Manage Community */}
+                        {/* ============================================= */}
+                        {/* MANAGE COMMUNITY */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
                             name="ManageCommunity"
-                            component={ManageCommunityScreen}
+                            component={
+                                ManageCommunityScreen
+                            }
                             options={{
                                 title: "Manage Community",
                             }}
                         />
 
-                        {/* Edit Community */}
+                        {/* ============================================= */}
+                        {/* EDIT COMMUNITY */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
                             name="EditCommunity"
-                            component={EditCommunityScreen}
+                            component={
+                                EditCommunityScreen
+                            }
                             options={{
                                 title: "Edit Community",
                             }}
                         />
 
-                        {/* Manage Members */}
+                        {/* ============================================= */}
+                        {/* MANAGE MEMBERS */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
                             name="ManageMembers"
-                            component={ManageMembersScreen}
+                            component={
+                                ManageMembersScreen
+                            }
                             options={{
                                 title: "Manage Members",
                             }}
                         />
 
-                        {/* Announcements */}
-
-                        <Stack.Screen
-                            name="Announcements"
-                            component={AnnouncementsScreen}
-                            options={{
-                                title: "Announcements",
-                            }}
-                        />
-
-                        {/* Create Announcement */}
+                        {/* ============================================= */}
+                        {/* CREATE ANNOUNCEMENT */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
                             name="CreateAnnouncement"
-                            component={CreateAnnouncementScreen}
+                            component={
+                                CreateAnnouncementScreen
+                            }
                             options={{
                                 title: "Create Announcement",
                             }}
                         />
 
-                        {/* Edit Announcement */}
+                        {/* ============================================= */}
+                        {/* EDIT ANNOUNCEMENT */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
                             name="EditAnnouncement"
-                            component={EditAnnouncementScreen}
+                            component={
+                                EditAnnouncementScreen
+                            }
                             options={{
-                                title: "Edit Announcement"
+                                title: "Edit Announcement",
                             }}
                         />
+
                     </>
 
                 ) : (
@@ -186,78 +218,70 @@ const AppNavigator = () => {
                     /* ================================================= */
 
                     <>
-                        {/* Home */}
+
+                        {/* ============================================= */}
+                        {/* SENIOR BOTTOM TABS */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
-                            name="Home"
-                            component={HomeScreen}
+                            name="SeniorTabs"
+                            component={
+                                SeniorBottomTabs
+                            }
                             options={{
-                                title: "Senior Community",
+                                headerShown: false,
                             }}
                         />
 
-                        {/* Communities */}
-
-                        <Stack.Screen
-                            name="Communities"
-                            component={CommunitiesScreen}
-                            options={{
-                                title: "Communities",
-                            }}
-                        />
-
-                        {/* My Communities */}
-
-                        <Stack.Screen
-                            name="MyCommunities"
-                            component={MyCommunitiesScreen}
-                            options={{
-                                title: "My Communities",
-                            }}
-                        />
-
-                        {/* Community Details */}
+                        {/* ============================================= */}
+                        {/* COMMUNITY DETAILS */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
                             name="CommunityDetails"
-                            component={CommunityDetailsScreen}
+                            component={
+                                CommunityDetailsScreen
+                            }
                             options={{
                                 title: "Community",
                             }}
                         />
 
-                        {/* Discussion */}
+                        {/* ============================================= */}
+                        {/* DISCUSSION */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
                             name="Discussion"
-                            component={DiscussionScreen}
+                            component={
+                                DiscussionScreen
+                            }
                             options={{
-                                title: "Community Discussion",
+                                title:
+                                    "Community Discussion",
                             }}
                         />
 
-                        {/* Community Announcements */}
+                        {/* ============================================= */}
+                        {/* COMMUNITY ANNOUNCEMENTS */}
+                        {/* ============================================= */}
 
                         <Stack.Screen
                             name="CommunityAnnouncements"
-                            component={CommunityAnnouncementsScreen}
+                            component={
+                                CommunityAnnouncementsScreen
+                            }
                             options={{
                                 title: "Announcements",
                             }}
                         />
-                        {/* Profile */}
 
-                        <Stack.Screen
-                            name="Profile"
-                            component={ProfileScreen}
-                            options={{
-                                title: "My Profile",
-                            }}
-                        />
                     </>
+
                 )}
 
             </Stack.Navigator>
+
         </NavigationContainer>
     );
 };

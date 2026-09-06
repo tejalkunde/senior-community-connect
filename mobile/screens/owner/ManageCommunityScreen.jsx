@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, {
+    useCallback,
+    useState,
+} from "react";
+
 import {
     View,
     Text,
@@ -6,65 +10,133 @@ import {
     StyleSheet,
     Alert,
     ScrollView,
+    ActivityIndicator,
 } from "react-native";
+
+import {
+    useFocusEffect,
+} from "@react-navigation/native";
+
+import {
+    useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import API from "../../services/api";
 
-const ManageCommunityScreen = ({ route, navigation }) => {
-    const { communityId } = route.params;
+const ManageCommunityScreen = ({
+    route,
+    navigation,
+}) => {
 
-    const [community, setCommunity] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [deleting, setDeleting] = useState(false);
+    const {
+        communityId,
+    } = route.params;
+
+    const insets =
+        useSafeAreaInsets();
+
+    const [community, setCommunity] =
+        useState(null);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const [deleting, setDeleting] =
+        useState(false);
+
+
+    // =====================================================
+    // LOAD COMMUNITY
+    // =====================================================
 
     const loadCommunity = async () => {
+
         try {
+
             setLoading(true);
 
-            const response = await API.get(
-                `/communities/${communityId}`
-            );
+            const response =
+                await API.get(
+                    `/communities/${communityId}`
+                );
 
             setCommunity(
-                response.data.community || response.data
+                response.data.community ||
+                response.data
             );
+
         } catch (error) {
-            console.log("Load community error:", error);
+
+            console.log(
+                "Load community error:",
+                error.response?.data ||
+                error.message
+            );
 
             Alert.alert(
-                "Error",
+                "Unable to Load Community",
                 error.response?.data?.message ||
-                    "Unable to load community."
+                "Please try again."
             );
+
         } finally {
+
             setLoading(false);
+
         }
     };
 
-    useEffect(() => {
-        loadCommunity();
-    }, [communityId]);
+
+    // =====================================================
+    // RELOAD WHEN SCREEN GETS FOCUS
+    // =====================================================
+
+    useFocusEffect(
+        useCallback(() => {
+
+            loadCommunity();
+
+        }, [communityId])
+    );
+
+
+    // =====================================================
+    // DELETE CONFIRMATION
+    // =====================================================
 
     const handleDelete = () => {
+
         Alert.alert(
             "Delete Community",
+
             "Are you sure you want to delete this community? This action cannot be undone.",
+
             [
                 {
                     text: "Cancel",
                     style: "cancel",
                 },
+
                 {
                     text: "Delete",
                     style: "destructive",
-                    onPress: deleteCommunity,
+                    onPress:
+                        deleteCommunity,
                 },
             ]
         );
+
     };
 
+
+    // =====================================================
+    // DELETE COMMUNITY
+    // =====================================================
+
     const deleteCommunity = async () => {
+
         try {
+
             setDeleting(true);
 
             await API.delete(
@@ -72,373 +144,1311 @@ const ManageCommunityScreen = ({ route, navigation }) => {
             );
 
             Alert.alert(
-                "Deleted",
-                "Community deleted successfully.",
+                "Community Deleted",
+
+                "The community has been deleted successfully.",
+
                 [
                     {
                         text: "OK",
+
                         onPress: () => {
+
                             navigation.navigate(
-                                "OwnerMyCommunities"
+                                "OwnerTabs",
+                                {
+                                    screen:
+                                        "OwnerMyCommunities",
+                                }
                             );
+
                         },
                     },
                 ]
             );
+
         } catch (error) {
+
             console.log(
                 "Delete community error:",
-                error
+                error.response?.data ||
+                error.message
             );
 
             Alert.alert(
-                "Error",
+                "Unable to Delete Community",
                 error.response?.data?.message ||
-                    "Unable to delete community."
+                "Please try again."
             );
+
         } finally {
+
             setDeleting(false);
+
         }
     };
 
+
+    // =====================================================
+    // STATUS
+    // =====================================================
+
+    const status =
+        community?.status ||
+        "PENDING";
+
+
+    // =====================================================
+    // STATUS STYLES
+    // =====================================================
+
+    const getStatusStyle = () => {
+
+        switch (status) {
+
+            case "APPROVED":
+
+                return {
+                    container:
+                        styles.approvedBadge,
+
+                    text:
+                        styles.approvedText,
+
+                    dot:
+                        styles.approvedDot,
+                };
+
+            case "REJECTED":
+
+                return {
+                    container:
+                        styles.rejectedBadge,
+
+                    text:
+                        styles.rejectedText,
+
+                    dot:
+                        styles.rejectedDot,
+                };
+
+            case "INACTIVE":
+
+                return {
+                    container:
+                        styles.inactiveBadge,
+
+                    text:
+                        styles.inactiveText,
+
+                    dot:
+                        styles.inactiveDot,
+                };
+
+            default:
+
+                return {
+                    container:
+                        styles.pendingBadge,
+
+                    text:
+                        styles.pendingText,
+
+                    dot:
+                        styles.pendingDot,
+                };
+        }
+    };
+
+    const statusStyle =
+        getStatusStyle();
+
+
+    // =====================================================
+    // LOADING
+    // =====================================================
+
     if (loading) {
+
         return (
-            <View style={styles.center}>
-                <Text style={styles.loadingText}>
-                    Loading...
+            <View
+                style={[
+                    styles.center,
+                    {
+                        paddingTop:
+                            insets.top,
+
+                        paddingBottom:
+                            insets.bottom,
+                    },
+                ]}
+            >
+
+                <ActivityIndicator
+                    size="large"
+                    color="#2F6FED"
+                />
+
+                <Text
+                    style={
+                        styles.loadingText
+                    }
+                >
+                    Loading community...
                 </Text>
+
             </View>
         );
     }
+
+
+    // =====================================================
+    // NOT FOUND
+    // =====================================================
 
     if (!community) {
+
         return (
-            <View style={styles.center}>
-                <Text style={styles.errorText}>
-                    Community not found.
+            <View
+                style={[
+                    styles.center,
+                    {
+                        paddingTop:
+                            insets.top,
+
+                        paddingBottom:
+                            insets.bottom,
+                    },
+                ]}
+            >
+
+                <View
+                    style={
+                        styles.errorIconContainer
+                    }
+                >
+
+                    <Text
+                        style={
+                            styles.errorIcon
+                        }
+                    >
+                        !
+                    </Text>
+
+                </View>
+
+                <Text
+                    style={
+                        styles.errorTitle
+                    }
+                >
+                    Community Not Found
                 </Text>
+
+                <Text
+                    style={
+                        styles.errorText
+                    }
+                >
+                    We could not find this community.
+                </Text>
+
+                <TouchableOpacity
+                    style={
+                        styles.retryButton
+                    }
+                    activeOpacity={0.8}
+                    onPress={
+                        loadCommunity
+                    }
+                >
+
+                    <Text
+                        style={
+                            styles.retryButtonText
+                        }
+                    >
+                        Try Again
+                    </Text>
+
+                </TouchableOpacity>
+
             </View>
         );
     }
 
-    const status = community.status || "PENDING";
+
+    // =====================================================
+    // MAIN SCREEN
+    // =====================================================
 
     return (
-        <ScrollView
-            contentContainerStyle={styles.container}
+        <View
+            style={styles.safeArea}
         >
-            <Text style={styles.title}>
-                Manage Community
-            </Text>
 
-            {/* Community Details */}
-            <View style={styles.card}>
-                <Text style={styles.communityName}>
-                    {community.name}
+            <ScrollView
+                showsVerticalScrollIndicator={
+                    false
+                }
+                contentContainerStyle={[
+                    styles.container,
+                    {
+                        paddingTop:
+                            insets.top + 18,
+
+                        paddingBottom:
+                            insets.bottom + 40,
+                    },
+                ]}
+            >
+
+                {/* =========================================
+                    HEADER
+                ========================================== */}
+
+                <Text
+                    style={styles.title}
+                >
+                    Manage Community
                 </Text>
 
-                <Text style={styles.description}>
-                    {community.description}
+                <Text
+                    style={styles.subtitle}
+                >
+                    View your community details and manage its members and announcements.
                 </Text>
 
-                <Text style={styles.category}>
-                    Category: {community.category}
-                </Text>
 
-                <View style={styles.statusContainer}>
-                    <Text style={styles.statusLabel}>
-                        Status:
+                {/* =========================================
+                    COMMUNITY DETAILS
+                ========================================== */}
+
+                <View
+                    style={
+                        styles.communityCard
+                    }
+                >
+
+                    <Text
+                        style={
+                            styles.communityName
+                        }
+                    >
+                        {community.name}
+                    </Text>
+
+                    {community.category ? (
+
+                        <View
+                            style={
+                                styles.categoryContainer
+                            }
+                        >
+
+                            <Text
+                                style={
+                                    styles.categoryLabel
+                                }
+                            >
+                                Category
+                            </Text>
+
+                            <Text
+                                style={
+                                    styles.categoryValue
+                                }
+                            >
+                                {community.category}
+                            </Text>
+
+                        </View>
+
+                    ) : null}
+
+
+                    <View
+                        style={
+                            styles.statusContainer
+                        }
+                    >
+
+                        <Text
+                            style={
+                                styles.statusLabel
+                            }
+                        >
+                            Status
+                        </Text>
+
+                        <View
+                            style={[
+                                styles.statusBadge,
+                                statusStyle.container,
+                            ]}
+                        >
+
+                            <View
+                                style={[
+                                    styles.statusDot,
+                                    statusStyle.dot,
+                                ]}
+                            />
+
+                            <Text
+                                style={[
+                                    styles.statusText,
+                                    statusStyle.text,
+                                ]}
+                            >
+                                {status}
+                            </Text>
+
+                        </View>
+
+                    </View>
+
+                </View>
+
+
+                {/* =========================================
+                    ABOUT COMMUNITY
+                ========================================== */}
+
+                <View
+                    style={
+                        styles.infoCard
+                    }
+                >
+
+                    <Text
+                        style={
+                            styles.sectionTitle
+                        }
+                    >
+                        About This Community
                     </Text>
 
                     <Text
-                        style={[
-                            styles.status,
-                            status === "APPROVED" &&
-                                styles.approved,
-                            status === "REJECTED" &&
-                                styles.rejected,
-                            status === "PENDING" &&
-                                styles.pending,
-                        ]}
+                        style={
+                            styles.description
+                        }
                     >
-                        {status}
+                        {community.description ||
+                            "No description available."}
                     </Text>
+
                 </View>
-            </View>
 
-            {/* Pending / Rejected */}
-            {status !== "APPROVED" && (
-                <>
-                    <View style={styles.infoBox}>
-                        <Text style={styles.infoText}>
-                            {status === "PENDING"
-                                ? "Your community is waiting for admin approval."
-                                : "This community was rejected by the admin."}
-                        </Text>
-                    </View>
 
-                    {/* Edit Community */}
-                    <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={() =>
-                            navigation.navigate(
-                                "EditCommunity",
-                                {
-                                    communityId,
-                                }
-                            )
+                {/* =========================================
+                    MEMBERS
+                ========================================== */}
+
+                <View
+                    style={
+                        styles.membersCard
+                    }
+                >
+
+                    <View
+                        style={
+                            styles.membersNumberContainer
                         }
                     >
-                        <Text style={styles.editButtonText}>
-                            Edit Community
-                        </Text>
-                    </TouchableOpacity>
 
-                    {/* Delete Community */}
-                    <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={handleDelete}
-                        disabled={deleting}
-                    >
-                        <Text style={styles.deleteButtonText}>
-                            {deleting
-                                ? "Deleting..."
-                                : "Delete Community"}
-                        </Text>
-                    </TouchableOpacity>
-                </>
-            )}
-
-            {/* Approved */}
-            {status === "APPROVED" && (
-                <>
-                    {/* Edit */}
-                    <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={() =>
-                            navigation.navigate(
-                                "EditCommunity",
-                                {
-                                    communityId,
-                                }
-                            )
-                        }
-                    >
-                        <Text style={styles.editButtonText}>
-                            Edit Community
-                        </Text>
-                    </TouchableOpacity>
-
-                    {/* Announcement */}
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={() =>
-                            navigation.navigate(
-                                "CreateAnnouncement",
-                                {
-                                    communityId,
-                                }
-                            )
-                        }
-                    >
-                        <Text style={styles.buttonText}>
-                            Create Announcement
-                        </Text>
-                    </TouchableOpacity>
-
-                    {/* Members */}
-                    <TouchableOpacity
-                        style={styles.secondaryButton}
-                        onPress={() => {
-                         navigation.navigate("ManageMembers", {
-                           communityId,
-                       })
-                        }}
-                    >
                         <Text
                             style={
-                                styles.secondaryButtonText
+                                styles.memberCount
                             }
                         >
-                            Manage Members
+                            {community.memberCount ||
+                                0}
                         </Text>
+
+                    </View>
+
+                    <View
+                        style={
+                            styles.membersContent
+                        }
+                    >
+
+                        <Text
+                            style={
+                                styles.memberTitle
+                            }
+                        >
+                            Community Members
+                        </Text>
+
+                        <Text
+                            style={
+                                styles.memberDescription
+                            }
+                        >
+                            People who have joined this community.
+                        </Text>
+
+                    </View>
+
+                </View>
+
+
+                {/* =========================================
+                    STATUS INFORMATION
+                ========================================== */}
+
+                {status !== "APPROVED" && (
+
+                    <View
+                        style={[
+                            styles.infoBox,
+                            status === "REJECTED" &&
+                                styles.rejectedInfoBox,
+                        ]}
+                    >
+
+                        <View
+                            style={[
+                                styles.infoIconContainer,
+                                status === "REJECTED" &&
+                                    styles.rejectedInfoIconContainer,
+                            ]}
+                        >
+
+                            <Text
+                                style={[
+                                    styles.infoIcon,
+                                    status === "REJECTED" &&
+                                        styles.rejectedInfoIcon,
+                                ]}
+                            >
+                                {status === "PENDING"
+                                    ? "..."
+                                    : "!"}
+                            </Text>
+
+                        </View>
+
+                        <View
+                            style={
+                                styles.infoContent
+                            }
+                        >
+
+                            <Text
+                                style={
+                                    styles.infoTitle
+                                }
+                            >
+                                {status === "PENDING"
+                                    ? "Waiting for Approval"
+                                    : "Community Rejected"}
+                            </Text>
+
+                            <Text
+                                style={
+                                    styles.infoText
+                                }
+                            >
+                                {status === "PENDING"
+                                    ? "Your community is waiting for admin approval. You can still edit or delete it."
+                                    : "This community was rejected by the admin. You can edit the details and try again."}
+                            </Text>
+
+                        </View>
+
+                    </View>
+
+                )}
+
+
+                {/* =========================================
+                    COMMUNITY ACTIONS
+                ========================================== */}
+
+                <Text
+                    style={
+                        styles.actionsTitle
+                    }
+                >
+                    Community Actions
+                </Text>
+
+
+                {/* EDIT COMMUNITY */}
+
+                <TouchableOpacity
+                    style={
+                        styles.actionButton
+                    }
+                    activeOpacity={0.8}
+                    onPress={() =>
+                        navigation.navigate(
+                            "EditCommunity",
+                            {
+                                communityId,
+                            }
+                        )
+                    }
+                >
+
+                    <View
+                        style={
+                            styles.actionNumber
+                        }
+                    >
+
+                        <Text
+                            style={
+                                styles.actionNumberText
+                            }
+                        >
+                            1
+                        </Text>
+
+                    </View>
+
+                    <View
+                        style={
+                            styles.actionContent
+                        }
+                    >
+
+                        <Text
+                            style={
+                                styles.actionTitle
+                            }
+                        >
+                            Edit Community
+                        </Text>
+
+                        <Text
+                            style={
+                                styles.actionText
+                            }
+                        >
+                            Update the community name, category, or description.
+                        </Text>
+
+                    </View>
+
+                    <Text
+                        style={
+                            styles.arrow
+                        }
+                    >
+                        ›
+                    </Text>
+
+                </TouchableOpacity>
+
+
+                {/* =========================================
+                    APPROVED ACTIONS
+                ========================================== */}
+
+                {status === "APPROVED" && (
+
+                    <>
+
+                        {/* CREATE ANNOUNCEMENT */}
+
+                        <TouchableOpacity
+                            style={
+                                styles.actionButton
+                            }
+                            activeOpacity={0.8}
+                            onPress={() =>
+                                navigation.navigate(
+                                    "CreateAnnouncement",
+                                    {
+                                        communityId,
+                                    }
+                                )
+                            }
+                        >
+
+                            <View
+                                style={
+                                    styles.actionNumber
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.actionNumberText
+                                    }
+                                >
+                                    2
+                                </Text>
+
+                            </View>
+
+                            <View
+                                style={
+                                    styles.actionContent
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.actionTitle
+                                    }
+                                >
+                                    Create Announcement
+                                </Text>
+
+                                <Text
+                                    style={
+                                        styles.actionText
+                                    }
+                                >
+                                    Share important updates with community members.
+                                </Text>
+
+                            </View>
+
+                            <Text
+                                style={
+                                    styles.arrow
+                                }
+                            >
+                                ›
+                            </Text>
+
+                        </TouchableOpacity>
+
+
+                        {/* MANAGE MEMBERS */}
+
+                        <TouchableOpacity
+                            style={
+                                styles.actionButton
+                            }
+                            activeOpacity={0.8}
+                            onPress={() =>
+                                navigation.navigate(
+                                    "ManageMembers",
+                                    {
+                                        communityId,
+                                    }
+                                )
+                            }
+                        >
+
+                            <View
+                                style={
+                                    styles.actionNumber
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.actionNumberText
+                                    }
+                                >
+                                    3
+                                </Text>
+
+                            </View>
+
+                            <View
+                                style={
+                                    styles.actionContent
+                                }
+                            >
+
+                                <Text
+                                    style={
+                                        styles.actionTitle
+                                    }
+                                >
+                                    Manage Members
+                                </Text>
+
+                                <Text
+                                    style={
+                                        styles.actionText
+                                    }
+                                >
+                                    View and manage people who joined this community.
+                                </Text>
+
+                            </View>
+
+                            <Text
+                                style={
+                                    styles.arrow
+                                }
+                            >
+                                ›
+                            </Text>
+
+                        </TouchableOpacity>
+
+                    </>
+                )}
+
+
+                {/* =========================================
+                    DELETE COMMUNITY
+                ========================================== */}
+
+                <View
+                    style={
+                        styles.dangerSection
+                    }
+                >
+
+                    <Text
+                        style={
+                            styles.dangerTitle
+                        }
+                    >
+                        Delete Community
+                    </Text>
+
+                    <Text
+                        style={
+                            styles.dangerDescription
+                        }
+                    >
+                        Deleting this community is permanent and cannot be undone.
+                    </Text>
+
+                    <TouchableOpacity
+                        style={
+                            styles.deleteButton
+                        }
+                        activeOpacity={0.8}
+                        onPress={
+                            handleDelete
+                        }
+                        disabled={
+                            deleting
+                        }
+                    >
+
+                        {deleting ? (
+
+                            <ActivityIndicator
+                                size="small"
+                                color="#B42318"
+                            />
+
+                        ) : (
+
+                            <Text
+                                style={
+                                    styles.deleteButtonText
+                                }
+                            >
+                                Delete Community
+                            </Text>
+
+                        )}
+
                     </TouchableOpacity>
 
-                    {/* Delete */}
-                    <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={handleDelete}
-                        disabled={deleting}
-                    >
-                        <Text style={styles.deleteButtonText}>
-                            {deleting
-                                ? "Deleting..."
-                                : "Delete Community"}
-                        </Text>
-                    </TouchableOpacity>
-                </>
-            )}
-        </ScrollView>
+                </View>
+
+            </ScrollView>
+
+        </View>
     );
 };
 
+export default ManageCommunityScreen;
+
+
+// =====================================================
+// STYLES
+// =====================================================
+
 const styles = StyleSheet.create({
-    container: {
-        padding: 24,
+
+    // =================================================
+    // CONTAINER
+    // =================================================
+
+    safeArea: {
+        flex: 1,
         backgroundColor: "#F7F9FC",
-        flexGrow: 1,
     },
+
+    container: {
+        flexGrow: 1,
+        paddingHorizontal: 20,
+    },
+
+
+    // =================================================
+    // CENTER
+    // =================================================
 
     center: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        paddingHorizontal: 25,
         backgroundColor: "#F7F9FC",
     },
 
     loadingText: {
-        fontSize: 18,
-        color: "#555",
+        marginTop: 12,
+        fontSize: 17,
+        color: "#667085",
+    },
+
+
+    // =================================================
+    // ERROR
+    // =================================================
+
+    errorIconContainer: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: "#FEECEC",
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 18,
+    },
+
+    errorIcon: {
+        fontSize: 32,
+        fontWeight: "800",
+        color: "#B42318",
+    },
+
+    errorTitle: {
+        fontSize: 24,
+        fontWeight: "700",
+        color: "#1F2937",
+        marginBottom: 8,
+        textAlign: "center",
     },
 
     errorText: {
-        fontSize: 18,
-        color: "red",
+        fontSize: 17,
+        color: "#667085",
+        textAlign: "center",
+        marginBottom: 22,
     },
+
+    retryButton: {
+        minHeight: 52,
+        backgroundColor: "#2F6FED",
+        paddingHorizontal: 28,
+        borderRadius: 10,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    retryButtonText: {
+        color: "#FFFFFF",
+        fontSize: 17,
+        fontWeight: "700",
+    },
+
+
+    // =================================================
+    // HEADER
+    // =================================================
 
     title: {
-        fontSize: 28,
-        fontWeight: "bold",
-        marginBottom: 24,
-        color: "#222",
+        fontSize: 29,
+        fontWeight: "700",
+        color: "#1F2937",
     },
 
-    card: {
-        backgroundColor: "#fff",
-        borderRadius: 14,
+    subtitle: {
+        fontSize: 17,
+        color: "#667085",
+        marginTop: 7,
+        marginBottom: 22,
+        lineHeight: 24,
+    },
+
+
+    // =================================================
+    // COMMUNITY CARD
+    // =================================================
+
+    communityCard: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: 16,
         padding: 20,
-        marginBottom: 20,
-        elevation: 3,
+        borderWidth: 1,
+        borderColor: "#E4E7EC",
+        marginBottom: 16,
+        elevation: 2,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
     },
 
     communityName: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: "#222",
-        marginBottom: 12,
+        fontSize: 25,
+        fontWeight: "700",
+        color: "#1F2937",
+        lineHeight: 32,
+        marginBottom: 18,
     },
 
-    description: {
+    categoryContainer: {
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: "#EAECF0",
+        marginBottom: 15,
+    },
+
+    categoryLabel: {
+        fontSize: 14,
+        color: "#667085",
+        marginBottom: 4,
+    },
+
+    categoryValue: {
         fontSize: 17,
-        lineHeight: 25,
-        color: "#555",
-        marginBottom: 15,
-    },
-
-    category: {
-        fontSize: 16,
-        color: "#555",
-        marginBottom: 15,
+        fontWeight: "600",
+        color: "#344054",
     },
 
     statusContainer: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "space-between",
     },
 
     statusLabel: {
-        fontSize: 17,
+        fontSize: 15,
+        color: "#667085",
         fontWeight: "600",
-        marginRight: 8,
     },
 
-    status: {
-        fontSize: 16,
-        fontWeight: "bold",
-    },
 
-    approved: {
-        color: "green",
-    },
+    // =================================================
+    // STATUS
+    // =================================================
 
-    rejected: {
-        color: "red",
-    },
-
-    pending: {
-        color: "#D97706",
-    },
-
-    editButton: {
-        backgroundColor: "#208AEF",
-        padding: 16,
-        borderRadius: 10,
+    statusBadge: {
+        flexDirection: "row",
         alignItems: "center",
-        marginBottom: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 20,
     },
 
-    editButtonText: {
-        color: "#fff",
-        fontSize: 18,
-        fontWeight: "bold",
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 7,
     },
 
-    button: {
-        backgroundColor: "#208AEF",
-        padding: 16,
-        borderRadius: 10,
-        alignItems: "center",
-        marginBottom: 12,
+    pendingBadge: {
+        backgroundColor: "#FFF4E5",
     },
 
-    buttonText: {
-        color: "#fff",
-        fontSize: 18,
-        fontWeight: "bold",
+    pendingDot: {
+        backgroundColor: "#B54708",
     },
 
-    secondaryButton: {
-        backgroundColor: "#fff",
+    approvedBadge: {
+        backgroundColor: "#EAF7EE",
+    },
+
+    approvedDot: {
+        backgroundColor: "#16803C",
+    },
+
+    rejectedBadge: {
+        backgroundColor: "#FEECEC",
+    },
+
+    rejectedDot: {
+        backgroundColor: "#B42318",
+    },
+
+    inactiveBadge: {
+        backgroundColor: "#F2F4F7",
+    },
+
+    inactiveDot: {
+        backgroundColor: "#667085",
+    },
+
+    statusText: {
+        fontSize: 14,
+        fontWeight: "700",
+    },
+
+    pendingText: {
+        color: "#B54708",
+    },
+
+    approvedText: {
+        color: "#16803C",
+    },
+
+    rejectedText: {
+        color: "#B42318",
+    },
+
+    inactiveText: {
+        color: "#475467",
+    },
+
+
+    // =================================================
+    // INFORMATION CARD
+    // =================================================
+
+    infoCard: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: 16,
+        padding: 20,
         borderWidth: 1,
-        borderColor: "#208AEF",
-        padding: 16,
-        borderRadius: 10,
+        borderColor: "#E4E7EC",
+        marginBottom: 16,
+    },
+
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: "#1F2937",
+        marginBottom: 10,
+    },
+
+    description: {
+        fontSize: 17,
+        lineHeight: 26,
+        color: "#344054",
+    },
+
+
+    // =================================================
+    // MEMBERS
+    // =================================================
+
+    membersCard: {
+        flexDirection: "row",
         alignItems: "center",
-        marginBottom: 12,
+        backgroundColor: "#FFFFFF",
+        borderRadius: 16,
+        padding: 18,
+        borderWidth: 1,
+        borderColor: "#E4E7EC",
+        marginBottom: 18,
     },
 
-    secondaryButtonText: {
-        color: "#208AEF",
-        fontSize: 18,
-        fontWeight: "bold",
-    },
-
-    deleteButton: {
-        backgroundColor: "#D32F2F",
-        padding: 16,
-        borderRadius: 10,
+    membersNumberContainer: {
+        width: 62,
+        height: 62,
+        borderRadius: 14,
+        backgroundColor: "#E8F1FF",
+        justifyContent: "center",
         alignItems: "center",
-        marginTop: 8,
+        marginRight: 15,
     },
 
-    deleteButtonText: {
-        color: "#fff",
-        fontSize: 18,
-        fontWeight: "bold",
+    memberCount: {
+        fontSize: 25,
+        fontWeight: "700",
+        color: "#2457B8",
     },
+
+    membersContent: {
+        flex: 1,
+    },
+
+    memberTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#1F2937",
+    },
+
+    memberDescription: {
+        fontSize: 15,
+        lineHeight: 21,
+        color: "#667085",
+        marginTop: 4,
+    },
+
+
+    // =================================================
+    // STATUS INFORMATION
+    // =================================================
 
     infoBox: {
-        backgroundColor: "#FFF7E6",
-        padding: 18,
-        borderRadius: 10,
+        flexDirection: "row",
+        backgroundColor: "#FFF8E6",
+        borderRadius: 14,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: "#F9DFA0",
         marginBottom: 20,
     },
 
-    infoText: {
-        fontSize: 17,
-        lineHeight: 25,
-        color: "#664D03",
+    rejectedInfoBox: {
+        backgroundColor: "#FFF5F4",
+        borderColor: "#F1B8B3",
     },
-});
 
-export default ManageCommunityScreen;
+    infoIconContainer: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "#FDE7B2",
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: 12,
+    },
+
+    rejectedInfoIconContainer: {
+        backgroundColor: "#FDDDD9",
+    },
+
+    infoIcon: {
+        fontSize: 18,
+        fontWeight: "800",
+        color: "#B54708",
+    },
+
+    rejectedInfoIcon: {
+        color: "#B42318",
+    },
+
+    infoContent: {
+        flex: 1,
+    },
+
+    infoTitle: {
+        fontSize: 17,
+        fontWeight: "700",
+        color: "#7A3E00",
+    },
+
+    infoText: {
+        fontSize: 15,
+        lineHeight: 22,
+        color: "#8A4B08",
+        marginTop: 5,
+    },
+
+
+    // =================================================
+    // ACTIONS
+    // =================================================
+
+    actionsTitle: {
+        fontSize: 21,
+        fontWeight: "700",
+        color: "#1F2937",
+        marginBottom: 12,
+    },
+
+    actionButton: {
+        minHeight: 82,
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFFFFF",
+        borderWidth: 1,
+        borderColor: "#E4E7EC",
+        borderRadius: 14,
+        paddingHorizontal: 15,
+        paddingVertical: 13,
+        marginBottom: 12,
+    },
+
+    actionNumber: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: "#E8F1FF",
+        justifyContent: "center",
+        alignItems: "center",
+        marginRight: 13,
+    },
+
+    actionNumberText: {
+        fontSize: 17,
+        fontWeight: "700",
+        color: "#2457B8",
+    },
+
+    actionContent: {
+        flex: 1,
+        paddingRight: 8,
+    },
+
+    actionTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#1F2937",
+    },
+
+    actionText: {
+        fontSize: 15,
+        lineHeight: 21,
+        color: "#667085",
+        marginTop: 4,
+    },
+
+    arrow: {
+        fontSize: 30,
+        color: "#98A2B3",
+        marginLeft: 5,
+    },
+
+
+    // =================================================
+    // DANGER ZONE
+    // =================================================
+
+    dangerSection: {
+        marginTop: 15,
+        paddingTop: 20,
+        borderTopWidth: 1,
+        borderTopColor: "#E4E7EC",
+    },
+
+    dangerTitle: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: "#1F2937",
+    },
+
+    dangerDescription: {
+        fontSize: 15,
+        lineHeight: 22,
+        color: "#667085",
+        marginTop: 5,
+        marginBottom: 14,
+    },
+
+    deleteButton: {
+        minHeight: 52,
+        borderWidth: 1.5,
+        borderColor: "#D92D20",
+        backgroundColor: "#FFF5F4",
+        borderRadius: 10,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    deleteButtonText: {
+        color: "#B42318",
+        fontSize: 17,
+        fontWeight: "700",
+    },
+
+});

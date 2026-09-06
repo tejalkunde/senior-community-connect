@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, {
+    useEffect,
+    useState,
+} from "react";
 
 import {
     View,
@@ -9,9 +12,16 @@ import {
     TouchableOpacity,
 } from "react-native";
 
+import {
+    useSafeAreaInsets,
+} from "react-native-safe-area-context";
+
 import API from "../../services/api";
 
 const MyCommunitiesScreen = ({ navigation }) => {
+
+    const insets = useSafeAreaInsets();
+
     const [communities, setCommunities] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -26,6 +36,7 @@ const MyCommunitiesScreen = ({ navigation }) => {
             setCommunities(
                 response.data.communities || response.data
             );
+
         } catch (error) {
             console.log(
                 "My communities error:",
@@ -38,20 +49,48 @@ const MyCommunitiesScreen = ({ navigation }) => {
 
     if (loading) {
         return (
-            <View style={styles.loader}>
-                <ActivityIndicator size="large" />
+            <View
+                style={[
+                    styles.loader,
+                    {
+                        paddingTop: insets.top,
+                    },
+                ]}
+            >
+                <ActivityIndicator
+                    size="large"
+                    color="#3F7D4A"
+                />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View
+            style={[
+                styles.container,
+                {
+                    paddingTop: insets.top + 20,
+                },
+            ]}
+        >
+
             <Text style={styles.title}>
                 My Communities
             </Text>
 
+            <Text style={styles.subtitle}>
+                Communities you have joined
+            </Text>
+
             {communities.length === 0 ? (
+
                 <View style={styles.emptyContainer}>
+
+                    <Text style={styles.emptyIcon}>
+                        👥
+                    </Text>
+
                     <Text style={styles.emptyTitle}>
                         No communities yet
                     </Text>
@@ -59,14 +98,21 @@ const MyCommunitiesScreen = ({ navigation }) => {
                     <Text style={styles.emptyText}>
                         Join a community to see it here.
                     </Text>
+
                 </View>
+
             ) : (
+
                 <FlatList
                     data={communities}
+
                     keyExtractor={(item) => item._id}
+
                     renderItem={({ item }) => (
+
                         <TouchableOpacity
                             style={styles.card}
+                            activeOpacity={0.8}
                             onPress={() =>
                                 navigation.navigate(
                                     "CommunityDetails",
@@ -76,6 +122,7 @@ const MyCommunitiesScreen = ({ navigation }) => {
                                 )
                             }
                         >
+
                             <Text style={styles.communityName}>
                                 {item.name}
                             </Text>
@@ -91,10 +138,18 @@ const MyCommunitiesScreen = ({ navigation }) => {
                             <Text style={styles.members}>
                                 {item.memberCount || 0} members
                             </Text>
+
                         </TouchableOpacity>
+
                     )}
+
+                    contentContainerStyle={styles.list}
+
+                    showsVerticalScrollIndicator={false}
                 />
+
             )}
+
         </View>
     );
 };
@@ -102,65 +157,105 @@ const MyCommunitiesScreen = ({ navigation }) => {
 export default MyCommunitiesScreen;
 
 const styles = StyleSheet.create({
+
     container: {
         flex: 1,
-        padding: 20,
+        paddingHorizontal: 20,
+        backgroundColor: "#EDF7ED",
     },
 
     loader: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: "#EDF7ED",
     },
 
     title: {
         fontSize: 28,
         fontWeight: "700",
+        marginBottom: 5,
+        color: "#245C3A",
+    },
+
+    subtitle: {
+        fontSize: 16,
+        color: "#557A62",
         marginBottom: 20,
     },
 
+    list: {
+        paddingBottom: 100,
+    },
+
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: "#FFFFFF",
         padding: 20,
-        borderRadius: 15,
+        borderRadius: 16,
         marginBottom: 15,
+
+        borderWidth: 1,
+        borderColor: "#CDE8D2",
+
         elevation: 3,
+
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.08,
+        shadowRadius: 5,
     },
 
     communityName: {
         fontSize: 21,
         fontWeight: "700",
+        color: "#245C3A",
     },
 
     category: {
         fontSize: 16,
         marginTop: 5,
+        color: "#557A62",
     },
 
     description: {
         fontSize: 16,
         marginTop: 10,
         lineHeight: 22,
+        color: "#374151",
     },
 
     members: {
         fontSize: 15,
         marginTop: 10,
+        color: "#557A62",
+        fontWeight: "600",
     },
 
     emptyContainer: {
         alignItems: "center",
-        marginTop: 80,
+        marginTop: 70,
+        paddingHorizontal: 20,
+    },
+
+    emptyIcon: {
+        fontSize: 48,
+        marginBottom: 15,
     },
 
     emptyTitle: {
         fontSize: 21,
         fontWeight: "700",
+        color: "#245C3A",
     },
 
     emptyText: {
         fontSize: 16,
         marginTop: 10,
         textAlign: "center",
+        color: "#557A62",
+        lineHeight: 23,
     },
 });

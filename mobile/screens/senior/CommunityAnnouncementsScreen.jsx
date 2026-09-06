@@ -13,7 +13,13 @@ import {
     TouchableOpacity,
 } from "react-native";
 
-import { useFocusEffect } from "@react-navigation/native";
+import {
+    useFocusEffect,
+} from "@react-navigation/native";
+
+import {
+    useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import API from "../../services/api";
 import AnnouncementCard from "../../components/AnnouncementCard";
@@ -21,10 +27,13 @@ import AnnouncementCard from "../../components/AnnouncementCard";
 const CommunityAnnouncementsScreen = ({
     route,
 }) => {
+
     const {
         communityId,
         communityName,
     } = route.params;
+
+    const insets = useSafeAreaInsets();
 
     const [announcements, setAnnouncements] =
         useState([]);
@@ -39,7 +48,9 @@ const CommunityAnnouncementsScreen = ({
         useState("");
 
     const fetchAnnouncements = async () => {
+
         try {
+
             setError("");
 
             const response = await API.get(
@@ -64,20 +75,25 @@ const CommunityAnnouncementsScreen = ({
             setAnnouncements(
                 sortedAnnouncements
             );
+
         } catch (err) {
+
             console.error(
                 "Fetch announcements error:",
                 err.response?.data ||
-                    err.message
+                err.message
             );
 
             setError(
                 err.response?.data?.message ||
-                    "Failed to load announcements."
+                "Failed to load announcements."
             );
+
         } finally {
+
             setLoading(false);
             setRefreshing(false);
+
         }
     };
 
@@ -100,6 +116,7 @@ const CommunityAnnouncementsScreen = ({
     const renderAnnouncement = ({
         item,
     }) => {
+
         return (
             <AnnouncementCard
                 announcement={item}
@@ -107,51 +124,70 @@ const CommunityAnnouncementsScreen = ({
         );
     };
 
+    /* LOADING */
+
     if (loading) {
+
         return (
-            <View style={styles.center}>
+            <View
+                style={[
+                    styles.center,
+                    {
+                        paddingTop: insets.top,
+                        paddingBottom: insets.bottom,
+                    },
+                ]}
+            >
+
                 <ActivityIndicator
                     size="large"
-                    color="#4F46E5"
+                    color="#B45309"
                 />
 
-                <Text
-                    style={styles.loadingText}
-                >
+                <Text style={styles.loadingText}>
                     Loading announcements...
                 </Text>
+
             </View>
         );
     }
+
+    /* ERROR */
 
     if (
         error &&
         announcements.length === 0
     ) {
+
         return (
-            <View style={styles.center}>
-                <Text
-                    style={styles.errorIcon}
-                >
+            <View
+                style={[
+                    styles.center,
+                    {
+                        paddingTop: insets.top,
+                        paddingBottom: insets.bottom,
+                    },
+                ]}
+            >
+
+                <Text style={styles.errorIcon}>
                     ⚠️
                 </Text>
 
-                <Text
-                    style={styles.errorTitle}
-                >
+                <Text style={styles.errorTitle}>
                     Unable to Load
                 </Text>
 
-                <Text
-                    style={styles.errorText}
-                >
+                <Text style={styles.errorText}>
                     {error}
                 </Text>
 
                 <TouchableOpacity
                     style={styles.retryButton}
+                    activeOpacity={0.8}
                     onPress={handleRetry}
                 >
+
                     <Text
                         style={
                             styles.retryButtonText
@@ -159,35 +195,61 @@ const CommunityAnnouncementsScreen = ({
                     >
                         Try Again
                     </Text>
+
                 </TouchableOpacity>
+
             </View>
         );
     }
 
     return (
         <View style={styles.container}>
+
             {/* HEADER */}
 
-            <View style={styles.header}>
-                <Text
-                    style={styles.headerTitle}
-                    numberOfLines={1}
-                >
-                    {communityName ||
-                        "Community"}
-                </Text>
+            <View
+                style={[
+                    styles.header,
+                    {
+                        paddingTop:
+                            insets.top + 15,
+                    },
+                ]}
+            >
 
-                <Text
-                    style={styles.headerSubtitle}
-                >
-                    Announcements
-                </Text>
+                <View style={styles.headerIcon}>
+
+                    <Text style={styles.headerIconText}>
+                        📢
+                    </Text>
+
+                </View>
+
+                <View style={styles.headerContent}>
+
+                    <Text
+                        style={styles.headerTitle}
+                        numberOfLines={1}
+                    >
+                        {communityName ||
+                            "Community"}
+                    </Text>
+
+                    <Text
+                        style={styles.headerSubtitle}
+                    >
+                        Community Announcements
+                    </Text>
+
+                </View>
+
             </View>
 
             {/* ANNOUNCEMENTS */}
 
             <FlatList
                 data={announcements}
+
                 keyExtractor={(
                     item,
                     index
@@ -195,38 +257,68 @@ const CommunityAnnouncementsScreen = ({
                     item._id ||
                     index.toString()
                 }
+
                 renderItem={
                     renderAnnouncement
                 }
+
                 contentContainerStyle={
                     announcements.length === 0
-                        ? styles.emptyContainer
-                        : styles.listContainer
+                        ? [
+                            styles.emptyContainer,
+                            {
+                                paddingBottom:
+                                    insets.bottom +
+                                    30,
+                            },
+                        ]
+                        : [
+                            styles.listContainer,
+                            {
+                                paddingBottom:
+                                    insets.bottom +
+                                    30,
+                            },
+                        ]
                 }
+
                 showsVerticalScrollIndicator={
                     false
                 }
+
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={
                             handleRefresh
                         }
+                        colors={["#B45309"]}
+                        tintColor="#B45309"
                     />
                 }
+
                 ListEmptyComponent={
                     <View
                         style={
                             styles.emptyState
                         }
                     >
-                        <Text
+
+                        <View
                             style={
-                                styles.emptyIcon
+                                styles.emptyIconContainer
                             }
                         >
-                            📢
-                        </Text>
+
+                            <Text
+                                style={
+                                    styles.emptyIcon
+                                }
+                            >
+                                📢
+                            </Text>
+
+                        </View>
 
                         <Text
                             style={
@@ -242,135 +334,207 @@ const CommunityAnnouncementsScreen = ({
                             }
                         >
                             There are no
-                            announcements
-                            from this
-                            community yet.
+                            announcements from
+                            this community yet.
                         </Text>
+
                     </View>
                 }
             />
+
         </View>
     );
 };
 
 export default CommunityAnnouncementsScreen;
 
+
 const styles = StyleSheet.create({
+
+    /* MAIN SCREEN */
+
     container: {
         flex: 1,
-        backgroundColor: "#F5F7FB",
+        backgroundColor: "#FFF8E1",
     },
+
 
     /* HEADER */
 
     header: {
+        flexDirection: "row",
+        alignItems: "center",
+
         backgroundColor: "#FFFFFF",
+
         paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 16,
+        paddingBottom: 17,
+
         borderBottomWidth: 1,
-        borderBottomColor: "#E5E7EB",
+        borderBottomColor: "#F3E8B3",
+
+        elevation: 2,
+
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.06,
+        shadowRadius: 3,
+    },
+
+    headerIcon: {
+        width: 52,
+        height: 52,
+
+        borderRadius: 15,
+
+        justifyContent: "center",
+        alignItems: "center",
+
+        backgroundColor: "#FEF3C7",
+
+        marginRight: 14,
+    },
+
+    headerIconText: {
+        fontSize: 28,
+    },
+
+    headerContent: {
+        flex: 1,
     },
 
     headerTitle: {
         fontSize: 22,
         fontWeight: "700",
-        color: "#111827",
+        color: "#78350F",
     },
 
     headerSubtitle: {
-        fontSize: 14,
-        color: "#6B7280",
+        fontSize: 15,
+        color: "#92400E",
         marginTop: 4,
     },
+
 
     /* LIST */
 
     listContainer: {
         padding: 16,
-        paddingBottom: 30,
     },
+
 
     /* LOADING */
 
     center: {
         flex: 1,
+
         justifyContent: "center",
         alignItems: "center",
-        padding: 20,
-        backgroundColor: "#F5F7FB",
+
+        paddingHorizontal: 20,
+
+        backgroundColor: "#FFF8E1",
     },
 
     loadingText: {
-        marginTop: 10,
-        fontSize: 14,
-        color: "#6B7280",
+        marginTop: 12,
+        fontSize: 16,
+        color: "#78350F",
     },
+
 
     /* ERROR */
 
     errorIcon: {
-        fontSize: 42,
-        marginBottom: 10,
-    },
-
-    errorTitle: {
-        fontSize: 20,
-        fontWeight: "700",
-        color: "#111827",
-        marginBottom: 8,
-    },
-
-    errorText: {
-        fontSize: 15,
-        color: "#DC2626",
-        textAlign: "center",
-        marginBottom: 20,
-        lineHeight: 22,
-    },
-
-    retryButton: {
-        backgroundColor: "#4F46E5",
-        paddingHorizontal: 25,
-        paddingVertical: 13,
-        borderRadius: 10,
-    },
-
-    retryButtonText: {
-        color: "#FFFFFF",
-        fontSize: 16,
-        fontWeight: "600",
-    },
-
-    /* EMPTY STATE */
-
-    emptyContainer: {
-        flexGrow: 1,
-        justifyContent: "center",
-        padding: 20,
-    },
-
-    emptyState: {
-        alignItems: "center",
-        paddingHorizontal: 30,
-    },
-
-    emptyIcon: {
         fontSize: 45,
         marginBottom: 12,
     },
 
-    emptyTitle: {
-        fontSize: 20,
+    errorTitle: {
+        fontSize: 21,
         fontWeight: "700",
-        color: "#111827",
+        color: "#78350F",
+        marginBottom: 8,
+    },
+
+    errorText: {
+        fontSize: 16,
+        color: "#B42318",
+        textAlign: "center",
+        marginBottom: 22,
+        lineHeight: 23,
+    },
+
+    retryButton: {
+        backgroundColor: "#B45309",
+
+        paddingHorizontal: 28,
+        paddingVertical: 15,
+
+        borderRadius: 12,
+
+        elevation: 2,
+    },
+
+    retryButtonText: {
+        color: "#FFFFFF",
+        fontSize: 17,
+        fontWeight: "700",
+    },
+
+
+    /* EMPTY */
+
+    emptyContainer: {
+        flexGrow: 1,
+
+        justifyContent: "center",
+
+        paddingHorizontal: 20,
+    },
+
+    emptyState: {
+        alignItems: "center",
+
+        paddingHorizontal: 20,
+    },
+
+    emptyIconContainer: {
+        width: 85,
+        height: 85,
+
+        borderRadius: 25,
+
+        justifyContent: "center",
+        alignItems: "center",
+
+        backgroundColor: "#FEF3C7",
+
+        marginBottom: 18,
+    },
+
+    emptyIcon: {
+        fontSize: 42,
+    },
+
+    emptyTitle: {
+        fontSize: 21,
+        fontWeight: "700",
+        color: "#78350F",
+
         marginBottom: 8,
     },
 
     emptyText: {
-        fontSize: 14,
-        lineHeight: 21,
-        color: "#6B7280",
+        fontSize: 16,
+        lineHeight: 24,
+
+        color: "#92400E",
+
         textAlign: "center",
     },
+
 });

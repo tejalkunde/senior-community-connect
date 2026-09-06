@@ -1,4 +1,3 @@
-
 import React, {
     useEffect,
     useState,
@@ -16,6 +15,10 @@ import {
     ActivityIndicator,
 } from "react-native";
 
+import {
+    useSafeAreaInsets,
+} from "react-native-safe-area-context";
+
 import API from "../../services/api";
 
 import {
@@ -29,6 +32,7 @@ import { useAuth } from "../../context/authcontext";
 import MessageBubble from "../../components/MessageBubble";
 
 const DiscussionScreen = ({ route }) => {
+
     const {
         communityId,
         communityName,
@@ -36,12 +40,15 @@ const DiscussionScreen = ({ route }) => {
 
     const { user } = useAuth();
 
+    const insets = useSafeAreaInsets();
+
     const [messages, setMessages] = useState([]);
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
 
     useEffect(() => {
+
         if (!user?._id) {
             return;
         }
@@ -63,6 +70,7 @@ const DiscussionScreen = ({ route }) => {
         );
 
         return () => {
+
             socket.off(
                 "receive_message",
                 handleReceiveMessage
@@ -75,10 +83,13 @@ const DiscussionScreen = ({ route }) => {
 
             disconnectSocket();
         };
+
     }, [communityId, user?._id]);
 
     const loadMessages = async () => {
+
         try {
+
             setLoading(true);
 
             const response = await API.get(
@@ -91,13 +102,17 @@ const DiscussionScreen = ({ route }) => {
                 [];
 
             setMessages(data);
+
         } catch (error) {
+
             console.log(
                 "Messages error:",
                 error.response?.data ||
-                    error.message
+                error.message
             );
+
         } finally {
+
             setLoading(false);
         }
     };
@@ -105,8 +120,10 @@ const DiscussionScreen = ({ route }) => {
     const handleReceiveMessage = (
         newMessage
     ) => {
+
         setMessages(
             (previousMessages) => {
+
                 // Avoid duplicate messages
                 if (
                     newMessage?._id &&
@@ -128,6 +145,7 @@ const DiscussionScreen = ({ route }) => {
     };
 
     const sendMessage = () => {
+
         const trimmedMessage =
             message.trim();
 
@@ -138,26 +156,33 @@ const DiscussionScreen = ({ route }) => {
         const socket = getSocket();
 
         if (!socket) {
+
             console.log(
                 "Socket is not connected."
             );
+
             return;
         }
 
         if (!socket.connected) {
+
             console.log(
                 "Socket is currently disconnected."
             );
+
             return;
         }
 
         setSending(true);
 
-        socket.emit("send_message", {
-            communityId,
-            senderId: user._id,
-            content: trimmedMessage,
-        });
+        socket.emit(
+            "send_message",
+            {
+                communityId,
+                senderId: user._id,
+                content: trimmedMessage,
+            }
+        );
 
         setMessage("");
 
@@ -165,8 +190,18 @@ const DiscussionScreen = ({ route }) => {
     };
 
     if (loading) {
+
         return (
-            <View style={styles.loadingContainer}>
+            <View
+                style={[
+                    styles.loadingContainer,
+                    {
+                        paddingTop: insets.top,
+                        paddingBottom: insets.bottom,
+                    },
+                ]}
+            >
+
                 <ActivityIndicator
                     size="large"
                     color="#2563EB"
@@ -177,11 +212,13 @@ const DiscussionScreen = ({ route }) => {
                 >
                     Loading discussion...
                 </Text>
+
             </View>
         );
     }
 
     return (
+
         <KeyboardAvoidingView
             style={styles.container}
             behavior={
@@ -190,10 +227,21 @@ const DiscussionScreen = ({ route }) => {
                     : undefined
             }
         >
+
             {/* HEADER */}
 
             {communityName ? (
-                <View style={styles.header}>
+
+                <View
+                    style={[
+                        styles.header,
+                        {
+                            paddingTop:
+                                insets.top + 10,
+                        },
+                    ]}
+                >
+
                     <Text
                         style={styles.headerTitle}
                         numberOfLines={1}
@@ -206,13 +254,17 @@ const DiscussionScreen = ({ route }) => {
                     >
                         Community Discussion
                     </Text>
+
                 </View>
+
             ) : null}
+
 
             {/* MESSAGES */}
 
             <FlatList
                 data={messages}
+
                 keyExtractor={(
                     item,
                     index
@@ -220,7 +272,9 @@ const DiscussionScreen = ({ route }) => {
                     item._id ||
                     index.toString()
                 }
+
                 renderItem={({ item }) => {
+
                     const isOwnMessage =
                         item.sender?._id ===
                             user?._id ||
@@ -238,21 +292,34 @@ const DiscussionScreen = ({ route }) => {
                         />
                     );
                 }}
-                contentContainerStyle={
+
+                contentContainerStyle={[
                     messages.length === 0
                         ? styles.emptyList
-                        : styles.messageList
-                }
+                        : styles.messageList,
+
+                    {
+                        paddingBottom:
+                            messages.length === 0
+                                ? 20
+                                : 20,
+                    },
+                ]}
+
                 showsVerticalScrollIndicator={
                     false
                 }
+
                 keyboardShouldPersistTaps="handled"
+
                 ListEmptyComponent={
+
                     <View
                         style={
                             styles.emptyState
                         }
                     >
+
                         <Text
                             style={
                                 styles.emptyIcon
@@ -278,15 +345,27 @@ const DiscussionScreen = ({ route }) => {
                             by sending the
                             first message.
                         </Text>
+
                     </View>
                 }
             />
 
+
             {/* MESSAGE INPUT */}
 
             <View
-                style={styles.inputContainer}
+                style={[
+                    styles.inputContainer,
+                    {
+                        paddingBottom:
+                            Math.max(
+                                insets.bottom,
+                                10
+                            ),
+                    },
+                ]}
             >
+
                 <TextInput
                     style={styles.input}
                     placeholder="Write a message..."
@@ -301,6 +380,7 @@ const DiscussionScreen = ({ route }) => {
                 <TouchableOpacity
                     style={[
                         styles.sendButton,
+
                         (!message.trim() ||
                             sending) &&
                             styles.disabledButton,
@@ -311,12 +391,16 @@ const DiscussionScreen = ({ route }) => {
                         sending
                     }
                 >
+
                     {sending ? (
+
                         <ActivityIndicator
                             size="small"
                             color="#FFFFFF"
                         />
+
                     ) : (
+
                         <Text
                             style={
                                 styles.sendText
@@ -325,26 +409,32 @@ const DiscussionScreen = ({ route }) => {
                             Send
                         </Text>
                     )}
+
                 </TouchableOpacity>
+
             </View>
+
         </KeyboardAvoidingView>
     );
 };
 
 export default DiscussionScreen;
 
+
 const styles = StyleSheet.create({
+
     container: {
         flex: 1,
         backgroundColor: "#F8FAFC",
     },
+
 
     /* HEADER */
 
     header: {
         backgroundColor: "#FFFFFF",
         paddingHorizontal: 20,
-        paddingVertical: 15,
+        paddingBottom: 15,
         borderBottomWidth: 1,
         borderBottomColor: "#E5E7EB",
     },
@@ -361,6 +451,7 @@ const styles = StyleSheet.create({
         marginTop: 3,
     },
 
+
     /* LOADING */
 
     loadingContainer: {
@@ -376,18 +467,20 @@ const styles = StyleSheet.create({
         color: "#6B7280",
     },
 
+
     /* MESSAGES */
 
     messageList: {
-        paddingVertical: 15,
-        paddingBottom: 20,
+        paddingTop: 15,
+        paddingHorizontal: 10,
     },
 
     emptyList: {
         flexGrow: 1,
         justifyContent: "center",
-        padding: 20,
+        paddingHorizontal: 20,
     },
+
 
     /* EMPTY STATE */
 
@@ -415,13 +508,14 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
 
+
     /* INPUT */
 
     inputContainer: {
         flexDirection: "row",
         alignItems: "flex-end",
         paddingHorizontal: 10,
-        paddingVertical: 10,
+        paddingTop: 10,
         backgroundColor: "#FFFFFF",
         borderTopWidth: 1,
         borderTopColor: "#E5E7EB",
@@ -440,6 +534,7 @@ const styles = StyleSheet.create({
         color: "#111827",
         backgroundColor: "#F9FAFB",
     },
+
 
     /* SEND BUTTON */
 
@@ -464,4 +559,3 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
 });
-
