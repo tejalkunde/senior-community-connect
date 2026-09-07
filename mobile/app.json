@@ -7,11 +7,9 @@
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
-
     "ios": {
       "icon": "./assets/expo.icon"
     },
-
     "android": {
        "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
@@ -21,14 +19,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
        
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.tejal_kunde293.mobile"
     },
-
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
-
     "plugins": [
       [
         "expo-splash-screen",
@@ -38,6 +35,11 @@
           "imageWidth": 76
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "06f00f7f-9f6e-4a5c-9717-ddaa24f64877"
+      }
+    }
   }
 }
