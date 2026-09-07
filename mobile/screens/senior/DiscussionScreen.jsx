@@ -1,6 +1,4 @@
-
-import React, { useEffect, useState } from "react";
-
+import React, { useCallback, useEffect, useState } from "react";
 import {
     View,
     Text,
@@ -11,27 +9,22 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
+    Alert,
+    Keyboard,
 } from "react-native";
-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import API from "../../services/api";
-
 import {
     connectSocket,
+    getSocket,
     disconnectSocket,
 } from "../../services/socket";
-
 import { useAuth } from "../../context/authcontext";
-
 import MessageBubble from "../../components/MessageBubble";
 
 const DiscussionScreen = ({ route }) => {
-    const {
-        communityId,
-        communityName,
-    } = route.params || {};
-
+    const { communityId, communityName } = route.params || {};
     const { user } = useAuth();
     const insets = useSafeAreaInsets();
 
@@ -41,155 +34,41 @@ const DiscussionScreen = ({ route }) => {
     const [sending, setSending] = useState(false);
     const [socketConnected, setSocketConnected] = useState(false);
 
-    // =====================================================
-    // LOAD MESSAGES + CONNECT SOCKET
-    // =====================================================
+    // Measured height of the custom header, used to offset
+    // KeyboardAvoidingView correctly on iOS instead of a guessed constant.
+    const [headerHeight, setHeaderHeight] = useState(0);
+
+    // On Android with edge-to-edge enabled (default/mandatory from
+    // Expo SDK 53+), windowSoftInputMode="resize" no longer reliably
+    // resizes the window, so KeyboardAvoidingView's "height" behavior
+    // has nothing to react to. We track the keyboard manually instead
+    // and apply its height as bottom padding ourselves. This uses only
+    // core RN Keyboard events, so it works fine in Expo Go.
+    const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
 
     useEffect(() => {
-        let mounted = true;
-        let socket = null;
+        if (Platform.OS !== "android") return;
 
-        const setupDiscussion = async () => {
-            if (!user?._id || !communityId) {
-                setLoading(false);
-                return;
-            }
+        const showSub = Keyboard.addListener("keyboardDidShow", (event) => {
+            setAndroidKeyboardHeight(event.endCoordinates?.height || 0);
+        });
 
-            try {
-                await loadMessages();
-
-                socket = await connectSocket();
-
-                if (!socket || !mounted) {
-                    return;
-                }
-
-                const handleConnect = () => {
-                    console.log(
-                        "Discussion socket connected:",
-                        socket.id
-                    );
-
-                    if (!mounted) return;
-
-                    setSocketConnected(true);
-
-                    socket.emit(
-                        "joinCommunity",
-                        communityId
-                    );
-
-                    console.log(
-                        "Joined community:",
-                        communityId
-                    );
-                };
-
-                const handleDisconnect = () => {
-                    console.log(
-                        "Discussion socket disconnected"
-                    );
-
-                    if (!mounted) return;
-
-                    setSocketConnected(false);
-                };
-
-                const handleReceiveMessage = (newMessage) => {
-                    console.log(
-                        "New message received:",
-                        newMessage
-                    );
-
-                    if (!mounted) return;
-
-                    setMessages((previousMessages) => {
-                        if (
-                            newMessage?._id &&
-                            previousMessages.some(
-                                (item) =>
-                                    item._id ===
-                                    newMessage._id
-                            )
-                        ) {
-                            return previousMessages;
-                        }
-
-                        return [
-                            ...previousMessages,
-                            newMessage,
-                        ];
-                    });
-                };
-
-                const handleSocketError = (error) => {
-                    console.log(
-                        "Socket error:",
-                        error
-                    );
-                };
-
-                socket.on(
-                    "connect",
-                    handleConnect
-                );
-
-                socket.on(
-                    "disconnect",
-                    handleDisconnect
-                );
-
-                socket.on(
-                    "newMessage",
-                    handleReceiveMessage
-                );
-
-                socket.on(
-                    "socketError",
-                    handleSocketError
-                );
-
-                if (socket.connected) {
-                    handleConnect();
-                }
-
-            } catch (error) {
-                console.log(
-                    "Discussion setup error:",
-                    error
-                );
-            }
-        };
-
-        setupDiscussion();
+        const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+            setAndroidKeyboardHeight(0);
+        });
 
         return () => {
-            mounted = false;
-
-            if (socket) {
-                socket.emit(
-                    "leaveCommunity",
-                    communityId
-                );
-
-                socket.off("connect");
-                socket.off("disconnect");
-                socket.off("newMessage");
-                socket.off("socketError");
-            }
-
-            setSocketConnected(false);
-
-            disconnectSocket();
+            showSub.remove();
+            hideSub.remove();
         };
+    }, []);
 
-    }, [communityId, user?._id]);
+    const loadMessages = useCallback(async () => {
+        if (!communityId) {
+            setLoading(false);
+            return;
+        }
 
-    // =====================================================
-    // LOAD OLD MESSAGES
-    // =====================================================
-
-    const loadMessages = async () => {
         try {
             setLoading(true);
 
@@ -197,132 +76,201 @@ const DiscussionScreen = ({ route }) => {
                 `/communities/${communityId}/messages`
             );
 
-            console.log(
-                "Messages API response:",
-                response.data
-            );
-
             const data =
-                response.data?.data ||
-                response.data?.messages ||
+                response.data?.data ??
+                response.data?.messages ??
+                response.data ??
                 [];
 
-            const messagesArray =
-                Array.isArray(data)
-                    ? data
-                    : [];
-
-            setMessages(messagesArray);
-
+            setMessages(Array.isArray(data) ? data : []);
         } catch (error) {
             console.log(
                 "Messages error:",
-                error.response?.data ||
-                error.message
+                error.response?.data || error.message
             );
 
             setMessages([]);
-
         } finally {
             setLoading(false);
         }
-    };
+    }, [communityId]);
 
-    // =====================================================
-    // SEND MESSAGE
-    // =====================================================
+    useEffect(() => {
+        let mounted = true;
+        let currentSocket = null;
 
-    const sendMessage = async () => {
-        const trimmedMessage =
-            message.trim();
+        const handleConnect = () => {
+            if (!mounted || !currentSocket) return;
 
-        if (!trimmedMessage) {
+            setSocketConnected(true);
+
+            currentSocket.emit("joinCommunity", communityId);
+        };
+
+        const handleDisconnect = (reason) => {
+            console.log("Discussion socket disconnected:", reason);
+
+            if (mounted) {
+                setSocketConnected(false);
+            }
+        };
+
+        const handleConnectError = (error) => {
+            console.log("SOCKET CONNECTION ERROR:", error?.message);
+
+            if (mounted) {
+                setSocketConnected(false);
+            }
+        };
+
+        const handleNewMessage = (newMessage) => {
+            if (!mounted || !newMessage) return;
+
+            setMessages((previousMessages) => {
+                if (
+                    newMessage?._id &&
+                    previousMessages.some(
+                        (item) => item?._id === newMessage._id
+                    )
+                ) {
+                    return previousMessages;
+                }
+
+                return [...previousMessages, newMessage];
+            });
+        };
+
+        const handleCommunityJoined = (data) => {
+            console.log("Community joined:", data);
+        };
+
+        const handleSocketError = (error) => {
+            if (mounted && error?.message) {
+                Alert.alert("Discussion", error.message);
+            }
+        };
+
+        const setupSocket = async () => {
+            if (!communityId) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                await loadMessages();
+
+                if (!mounted) return;
+
+                currentSocket = await connectSocket();
+
+                if (!currentSocket) {
+                    return;
+                }
+
+                if (!mounted) return;
+
+                currentSocket.on("connect", handleConnect);
+                currentSocket.on("disconnect", handleDisconnect);
+                currentSocket.on("connect_error", handleConnectError);
+                currentSocket.on("newMessage", handleNewMessage);
+                currentSocket.on("communityJoined", handleCommunityJoined);
+                currentSocket.on("socketError", handleSocketError);
+
+                if (currentSocket.connected) {
+                    handleConnect();
+                }
+            } catch (error) {
+                console.log("Discussion socket setup error:", error);
+
+                if (mounted) {
+                    setSocketConnected(false);
+                }
+            }
+        };
+
+        setupSocket();
+
+        return () => {
+            mounted = false;
+
+            if (currentSocket) {
+                if (currentSocket.connected) {
+                    currentSocket.emit("leaveCommunity", communityId);
+                }
+
+                currentSocket.off("connect", handleConnect);
+                currentSocket.off("disconnect", handleDisconnect);
+                currentSocket.off("connect_error", handleConnectError);
+                currentSocket.off("newMessage", handleNewMessage);
+                currentSocket.off("communityJoined", handleCommunityJoined);
+                currentSocket.off("socketError", handleSocketError);
+            }
+
+            disconnectSocket();
+            currentSocket = null;
+        };
+    }, [communityId, loadMessages]);
+
+    const sendMessage = () => {
+        const trimmedMessage = message.trim();
+
+        if (!trimmedMessage) return;
+
+        if (!socketConnected) {
+            Alert.alert(
+                "Not Connected",
+                "Please wait for the discussion to connect."
+            );
+            return;
+        }
+
+        const socket = getSocket();
+
+        if (!socket || !socket.connected) {
+            Alert.alert("Disconnected", "Socket is not connected.");
+
+            setSocketConnected(false);
             return;
         }
 
         try {
-            const socket =
-                await connectSocket();
-
-            if (!socket) {
-                console.log(
-                    "Socket is not available."
-                );
-                return;
-            }
-
-            if (!socket.connected) {
-                console.log(
-                    "Socket is not connected."
-                );
-                return;
-            }
-
             setSending(true);
 
-            socket.emit(
-                "sendMessage",
-                {
-                    communityId,
-                    content: trimmedMessage,
-                }
-            );
+            socket.emit("sendMessage", {
+                communityId,
+                content: trimmedMessage,
+            });
 
             setMessage("");
 
+            Keyboard.dismiss();
         } catch (error) {
-            console.log(
-                "Send message error:",
-                error
-            );
+            console.log("Send message error:", error);
+
+            Alert.alert("Error", "Unable to send message.");
         } finally {
             setSending(false);
         }
     };
 
-    // =====================================================
-    // RENDER MESSAGE
-    // =====================================================
-
     const renderMessage = ({ item }) => {
         const senderId =
-            item?.sender?._id ||
-            item?.sender;
+            item?.sender?._id || item?.sender || item?.senderId;
 
-        const currentUserId =
-            user?._id;
+        const currentUserId = user?._id;
 
         const isOwnMessage =
-            senderId?.toString() ===
-            currentUserId?.toString();
+            senderId?.toString() === currentUserId?.toString();
 
         return (
-            <MessageBubble
-                message={item}
-                isOwnMessage={isOwnMessage}
-            />
+            <MessageBubble message={item} isOwnMessage={isOwnMessage} />
         );
     };
 
-    // =====================================================
-    // LOADING SCREEN
-    // =====================================================
-
     if (loading) {
         return (
-            <View
-                style={[
-                    styles.centerContainer,
-                    {
-                        paddingTop:
-                            insets.top,
-                    },
-                ]}
-            >
-                <ActivityIndicator
-                    size="large"
-                    color="#2563EB"
-                />
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#2563EB" />
 
                 <Text style={styles.loadingText}>
                     Loading discussion...
@@ -331,145 +279,139 @@ const DiscussionScreen = ({ route }) => {
         );
     }
 
-    // =====================================================
-    // MAIN UI
-    // =====================================================
+    // On Android we skip KeyboardAvoidingView's own "height"/"padding"
+    // behavior (undefined = no-op) and instead push the input up
+    // ourselves via androidKeyboardHeight, since the window itself is
+    // no longer resized under edge-to-edge.
+    const chatBehavior = Platform.OS === "ios" ? "padding" : undefined;
+    const chatOffset =
+        Platform.OS === "ios" ? headerHeight + insets.top : 0;
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={
-                Platform.OS === "ios"
-                    ? "padding"
-                    : "height"
-            }
-            keyboardVerticalOffset={
-                Platform.OS === "ios"
-                    ? 90
-                    : 0
-            }
-        >
-
+        <View style={styles.container}>
             {/* HEADER */}
 
-            <View style={styles.header}>
+            <View
+                style={styles.header}
+                onLayout={(event) =>
+                    setHeaderHeight(event.nativeEvent.layout.height)
+                }
+            >
                 <Text style={styles.title}>
-                    {communityName ||
-                        "Community Discussion"}
+                    {communityName || "Community Discussion"}
                 </Text>
 
-                <View
-                    style={
-                        styles.connectionRow
-                    }
-                >
+                <View style={styles.connectionRow}>
                     <View
                         style={[
                             styles.statusDot,
                             {
-                                backgroundColor:
-                                    socketConnected
-                                        ? "#22C55E"
-                                        : "#EF4444",
+                                backgroundColor: socketConnected
+                                    ? "#22C55E"
+                                    : "#EF4444",
                             },
                         ]}
                     />
 
-                    <Text style={styles.statusText}>
-                        {socketConnected
-                            ? "Connected"
-                            : "Disconnected"}
+                    <Text
+                        style={[
+                            styles.statusText,
+                            {
+                                color: socketConnected
+                                    ? "#16A34A"
+                                    : "#DC2626",
+                            },
+                        ]}
+                    >
+                        {socketConnected ? "Connected" : "Disconnected"}
                     </Text>
                 </View>
             </View>
 
-            {/* MESSAGES */}
+            {/* MESSAGES + INPUT */}
 
-            <FlatList
-                data={messages}
-                keyExtractor={(item, index) =>
-                    item?._id ||
-                    index.toString()
-                }
-                renderItem={renderMessage}
-                contentContainerStyle={[
-                    styles.messageList,
-                    messages.length === 0 &&
-                        styles.emptyList,
-                ]}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-            />
-
-            {/* EMPTY STATE */}
-
-            {messages.length === 0 && (
-                <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyTitle}>
-                        No messages yet
-                    </Text>
-
-                    <Text style={styles.emptyText}>
-                        Start the discussion with
-                        your community.
-                    </Text>
-                </View>
-            )}
-
-            {/* MESSAGE INPUT */}
-
-            <View
-                style={[
-                    styles.inputContainer,
-                    {
-                        paddingBottom:
-                            Math.max(
-                                insets.bottom,
-                                10
-                            ),
-                    },
-                ]}
+            <KeyboardAvoidingView
+                style={styles.chatContainer}
+                behavior={chatBehavior}
+                keyboardVerticalOffset={chatOffset}
             >
-                <TextInput
-                    value={message}
-                    onChangeText={setMessage}
-                    placeholder="Write a message..."
-                    placeholderTextColor="#888"
-                    style={styles.input}
-                    multiline
-                    maxLength={1000}
+                <FlatList
+                    style={styles.messageListFlex}
+                    data={messages}
+                    keyExtractor={(item, index) =>
+                        item?._id || `message-${index}`
+                    }
+                    renderItem={renderMessage}
+                    contentContainerStyle={[
+                        styles.messageList,
+                        messages.length === 0 && styles.emptyList,
+                    ]}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    showsVerticalScrollIndicator={false}
                 />
 
-                <TouchableOpacity
-                    style={[
-                        styles.sendButton,
-                        (
-                            !message.trim() ||
-                            sending ||
-                            !socketConnected
-                        ) &&
-                            styles.sendButtonDisabled,
-                    ]}
-                    onPress={sendMessage}
-                    disabled={
-                        !message.trim() ||
-                        sending ||
-                        !socketConnected
-                    }
-                >
-                    {sending ? (
-                        <ActivityIndicator
-                            size="small"
-                            color="#FFFFFF"
-                        />
-                    ) : (
-                        <Text style={styles.sendText}>
-                            Send
+                {messages.length === 0 && (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyTitle}>
+                            No messages yet
                         </Text>
-                    )}
-                </TouchableOpacity>
-            </View>
-        </KeyboardAvoidingView>
+
+                        <Text style={styles.emptyText}>
+                            Start the discussion with your community.
+                        </Text>
+                    </View>
+                )}
+
+                {/* INPUT */}
+
+                <View
+                    style={[
+                        styles.inputContainer,
+                        {
+                            paddingBottom: Math.max(insets.bottom, 8),
+                            // Manual Android keyboard offset — see
+                            // androidKeyboardHeight effect above.
+                            marginBottom:
+                                Platform.OS === "android"
+                                    ? androidKeyboardHeight
+                                    : 0,
+                        },
+                    ]}
+                >
+                    <TextInput
+                        value={message}
+                        onChangeText={setMessage}
+                        placeholder="Write a message..."
+                        placeholderTextColor="#888888"
+                        style={styles.input}
+                        multiline
+                        maxLength={1000}
+                        textAlignVertical="center"
+                    />
+
+                    <TouchableOpacity
+                        style={[
+                            styles.sendButton,
+                            (!message.trim() ||
+                                sending ||
+                                !socketConnected) &&
+                                styles.sendButtonDisabled,
+                        ]}
+                        onPress={sendMessage}
+                        disabled={
+                            !message.trim() || sending || !socketConnected
+                        }
+                    >
+                        {sending ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                            <Text style={styles.sendText}>Send</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </KeyboardAvoidingView>
+        </View>
     );
 };
 
@@ -481,7 +423,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#F5F5F5",
     },
 
-    centerContainer: {
+    loadingContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
@@ -511,24 +453,33 @@ const styles = StyleSheet.create({
     connectionRow: {
         flexDirection: "row",
         alignItems: "center",
-        marginTop: 5,
+        marginTop: 6,
     },
 
     statusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+        width: 9,
+        height: 9,
+        borderRadius: 5,
         marginRight: 6,
     },
 
     statusText: {
-        fontSize: 12,
-        color: "#666666",
+        fontSize: 13,
+        fontWeight: "500",
+    },
+
+    chatContainer: {
+        flex: 1,
+    },
+
+    messageListFlex: {
+        flex: 1,
     },
 
     messageList: {
+        paddingHorizontal: 10,
         paddingTop: 12,
-        paddingBottom: 20,
+        paddingBottom: 12,
     },
 
     emptyList: {
@@ -559,7 +510,7 @@ const styles = StyleSheet.create({
 
     inputContainer: {
         flexDirection: "row",
-        alignItems: "flex-end",
+        alignItems: "center",
         paddingHorizontal: 10,
         paddingTop: 8,
         backgroundColor: "#FFFFFF",
@@ -570,7 +521,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         minHeight: 45,
-        maxHeight: 110,
+        maxHeight: 100,
         backgroundColor: "#F1F1F1",
         borderRadius: 22,
         paddingHorizontal: 16,
@@ -599,4 +550,3 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
 });
-

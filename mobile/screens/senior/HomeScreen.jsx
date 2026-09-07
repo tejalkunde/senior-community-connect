@@ -1,4 +1,3 @@
-
 import React from "react";
 
 import {
@@ -298,15 +297,16 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
 
+    // Discover Communities — green family, matching the 👥 icon circle
     discoverCard: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#ECFDF5",
         borderRadius: 16,
         padding: 17,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: "#B7E4DF",
+        borderColor: "#A7F3D0",
         elevation: 2,
     },
 
@@ -320,15 +320,16 @@ const styles = StyleSheet.create({
         marginRight: 15,
     },
 
+    // Join Communities — pink family, matching the ❤️ icon circle
     joinCard: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#FDF2F8",
         borderRadius: 16,
         padding: 17,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: "#B7E4DF",
+        borderColor: "#FBCFE8",
         elevation: 2,
     },
 
@@ -342,15 +343,16 @@ const styles = StyleSheet.create({
         marginRight: 15,
     },
 
+    // Start Discussions — orange family, matching the 💬 icon circle
     discussionCard: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#FFF7ED",
         borderRadius: 16,
         padding: 17,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: "#B7E4DF",
+        borderColor: "#FED7AA",
         elevation: 2,
     },
 
@@ -364,15 +366,16 @@ const styles = StyleSheet.create({
         marginRight: 15,
     },
 
+    // Stay Updated — amber family, matching the 📢 icon circle
     updateCard: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#FFFBEB",
         borderRadius: 16,
         padding: 17,
         marginBottom: 25,
         borderWidth: 1,
-        borderColor: "#B7E4DF",
+        borderColor: "#FDE68A",
         elevation: 2,
     },
 
@@ -438,4 +441,3 @@ const styles = StyleSheet.create({
     },
 
 });
-

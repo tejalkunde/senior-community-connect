@@ -1,5 +1,5 @@
 import React, {
-    useEffect,
+    useCallback,
     useState,
 } from "react";
 
@@ -10,11 +10,16 @@ import {
     FlatList,
     StyleSheet,
     ActivityIndicator,
+    RefreshControl,
 } from "react-native";
 
 import {
     useSafeAreaInsets,
 } from "react-native-safe-area-context";
+
+import {
+    useFocusEffect,
+} from "@react-navigation/native";
 
 import CommunityCard from "../../components/CommunityCard";
 
@@ -30,67 +35,89 @@ const CommunitiesScreen = ({ navigation }) => {
     const [communities, setCommunities] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
 
     // =========================
     // LOAD COMMUNITIES
     // =========================
 
-    useEffect(() => {
-        loadCommunities();
-    }, []);
+    const loadCommunities = useCallback(
+        async ({ isRefresh = false } = {}) => {
+            try {
+
+                if (isRefresh) {
+                    setRefreshing(true);
+                } else {
+                    setLoading(true);
+                }
+
+                const data = await getCommunities();
+
+                console.log("Communities API response:", data);
+
+                /*
+                 * Supports different API response formats:
+                 *
+                 * 1. data = [...]
+                 *
+                 * 2. data = {
+                 *      data: [...]
+                 *    }
+                 *
+                 * 3. data = {
+                 *      communities: [...]
+                 *    }
+                 */
+
+                const communityList =
+                    Array.isArray(data)
+                        ? data
+                        : data?.data ||
+                          data?.communities ||
+                          [];
+
+                setCommunities(
+                    Array.isArray(communityList)
+                        ? communityList
+                        : []
+                );
+
+            } catch (error) {
+
+                console.log(
+                    "Community error:",
+                    error.response?.data ||
+                        error.message
+                );
+
+                setCommunities([]);
+
+            } finally {
+
+                setLoading(false);
+                setRefreshing(false);
+
+            }
+        },
+        []
+    );
 
 
-    const loadCommunities = async () => {
-        try {
+    // Refetch every time this screen comes into focus (e.g. navigating
+    // back from CommunityDetails after joining/leaving a community),
+    // so member counts and membership status stay current without
+    // needing a full app reload.
+    useFocusEffect(
+        useCallback(() => {
+            loadCommunities();
+        }, [loadCommunities])
+    );
 
-            const data = await getCommunities();
 
-            console.log("Communities API response:", data);
-
-            /*
-             * Supports different API response formats:
-             *
-             * 1. data = [...]
-             *
-             * 2. data = {
-             *      data: [...]
-             *    }
-             *
-             * 3. data = {
-             *      communities: [...]
-             *    }
-             */
-
-            const communityList =
-                Array.isArray(data)
-                    ? data
-                    : data?.data ||
-                      data?.communities ||
-                      [];
-
-            setCommunities(
-                Array.isArray(communityList)
-                    ? communityList
-                    : []
-            );
-
-        } catch (error) {
-
-            console.log(
-                "Community error:",
-                error.response?.data ||
-                    error.message
-            );
-
-            setCommunities([]);
-
-        } finally {
-
-            setLoading(false);
-
-        }
-    };
+    const onRefresh = useCallback(() => {
+        loadCommunities({ isRefresh: true });
+    }, [loadCommunities]);
 
 
     // =========================
@@ -223,6 +250,15 @@ const CommunitiesScreen = ({ navigation }) => {
                 }
 
                 showsVerticalScrollIndicator={false}
+
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor="#0F766E"
+                        colors={["#0F766E"]}
+                    />
+                }
             />
 
         </View>
